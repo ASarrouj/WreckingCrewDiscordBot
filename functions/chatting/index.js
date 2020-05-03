@@ -9,6 +9,11 @@ const listeners = [
         reply: 'HUHUHUHUHU JOE YOU\'RE KILLING ME MAN <:boxofsand:672942967966662689>',
         info: 'Boofle recognizes this as one of the highest tier jokes, possibly second only to \"BOX OF SAND\"'
     },
+    {
+        message: 'PEPPERONI',
+        reply: 'That wasn\'t funny chas.',
+        info: 'Funniest pizza topping in existence'
+    }
 ]
 module.exports = (client) => {
     client.on('message', msg => {

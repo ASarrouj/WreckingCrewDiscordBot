@@ -1,7 +1,7 @@
 const fs = require('fs');
 path = require('path');
 
-const filename = path.join(__dirname,'ftbDatabase.json');
+const filename = path.join(__dirname,'ftbDatabase.ign.json');
 let ftbDatabase = JSON.parse(fs.readFileSync(filename))
 
 commands = [

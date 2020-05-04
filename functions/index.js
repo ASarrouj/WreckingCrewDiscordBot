@@ -6,14 +6,14 @@ module.exports = {
         })
         
         const commands = functions.reduce((acc, module) => {
-            acc.push(module.commands)
+            return acc.concat(module.commands);
         }, [])
 
         client.on('message', msg => {
             if (msg.content === '!help') {
                 msg.channel.send(commands.reduce((accMsg, command) => {
                     return accMsg += `'${command.message}': ${command.info}\n`;
-                }, "messages:\n"))
+                }, "Commands:\n"))
             }
         })
     }

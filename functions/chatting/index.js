@@ -1,4 +1,4 @@
-const listeners = [
+ const commands = [
     {
         message: 'BOX OF SAND',
         reply: 'GOOD ONE JOE <:boxofsand:672942967966662689>',
@@ -15,18 +15,15 @@ const listeners = [
         info: 'Funniest pizza topping in existence'
     }
 ]
-module.exports = (client) => {
-    client.on('message', msg => {
-        listeners.forEach((listener) => {
-            if (msg.content.toLowerCase() === listener.message.toLowerCase()){
-                msg.channel.send(listener.reply)
-            }
+ module.exports = {
+    commands,
+    func: (client) => {
+        client.on('message', msg => {
+            commands.forEach((command) => {
+                if (msg.content.toLowerCase() === command.message.toLowerCase()) {
+                    msg.channel.send(command.reply)
+                }
+            })
         })
-
-        if (msg.content === '!help'){
-            msg.channel.send(listeners.reduce((accMsg, listener) => {
-                return accMsg += `'${listener.message}': ${listener.info}\n`;
-            }, "Commands:\n"))
-        }
-    })
+    }
 }

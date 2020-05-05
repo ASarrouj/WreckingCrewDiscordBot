@@ -2,7 +2,7 @@ const fs = require('fs');
 path = require('path');
 
 const filename = path.join(__dirname,'ftbDatabase.ign.json');
-let ftbDatabase = JSON.parse(fs.readFileSync(filename))
+let ftbDatabase = JSON.parse(fs.readFileSync(filename));
 
 commands = [
     {
@@ -16,20 +16,18 @@ module.exports = {
     func: (client) => {
         client.on('message', (msg) => {
             if (msg.content.includes('!ftb') && msg.author.username !== "Boofle") {
-                msgParts = msg.content.split(/\s/);
+                msgParts = msg.content.trim().split(/\s+/);
                 if (msgParts.length === 1) {
                     msg.channel.send(Object.entries(ftbDatabase).reduce((accMsg, ftbEntry) => {
-                        let user = msg.guild.members.cache.get(ftbEntry[0])/* || await client.fetchUser(ftbEntry[0])*/;
+                        let user = msg.guild.members.cache.get(ftbEntry[0]);
                         return accMsg += `${user.displayName}: ${ftbEntry[1]}\n`;
                     }, "FTB STANDINGS:\n"))
                 }
-                else if (msgParts.length === 3 && !Number.isNaN(parseInt(msgParts[1])) && /<@!\d+>/.test(msgParts[2])) {
+                else if (msgParts.length === 3 && !Number.isNaN(parseInt(msgParts[1])) && /<@!?\d+>/.test(msgParts[2])) {
                     const id = /\d+/.exec(msgParts[2])[0];
                     let user = null;
                     try {
-                        console.log(id)
-                        user = msg.guild.members.cache.get(id)/* || await client.fetchUser(id)*/;
-                        console.log("done")
+                        user = msg.guild.members.cache.get(id);
                     } catch (e) {
                         console.error(e)
                     }

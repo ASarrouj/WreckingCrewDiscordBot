@@ -11,7 +11,7 @@
     },
     {
         message: '!chas',
-        reply: '<:lmao:709205699972038727>CHAS DOES IT AGAIN<:lmao:709205699972038727>',
+        reply: '<:lmao:547089522790498315> CHAS DOES IT AGAIN <:lmao:547089522790498315>',
         info: 'Use this when Chas posts \"heat\"'
     }
 ]

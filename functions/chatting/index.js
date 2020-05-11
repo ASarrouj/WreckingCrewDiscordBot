@@ -10,9 +10,9 @@
         info: 'Boofle recognizes this as one of the highest tier jokes, possibly second only to \"BOX OF SAND\"'
     },
     {
-        message: 'PEPPERONI',
-        reply: 'That wasn\'t funny chas.',
-        info: 'Funniest pizza topping in existence'
+        message: '!chas',
+        reply: '<:lmao:709205699972038727>CHAS DOES IT AGAIN<:lmao:709205699972038727>',
+        info: 'Use this when Chas posts \"heat\"'
     }
 ]
  module.exports = {

@@ -17,13 +17,11 @@
 ]
  module.exports = {
     commands,
-    func: (client) => {
-        client.on('message', msg => {
-            commands.forEach((command) => {
-                if (msg.content.toLowerCase() === command.message.toLowerCase()) {
-                    msg.channel.send(command.reply)
-                }
-            })
+    func: (msg) => {
+        commands.forEach((command) => {
+            if (msg.content.toLowerCase() === command.message.toLowerCase()) {
+                msg.channel.send(command.reply);
+            }
         })
     }
 }

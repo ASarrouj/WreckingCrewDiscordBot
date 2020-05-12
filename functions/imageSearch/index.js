@@ -1,7 +1,9 @@
-const {MessageAttachment} = require('discord.js')
+const keys = require('./searchKeys.ign.js');
+const {MessageAttachment} = require('discord.js');
 const imageSearch = require('image-search-google');
-const google = new imageSearch('006750375323684879005:suqbjlmbbdh', 'AIzaSyD0a61XJErUdof14CNo6xan_f5jc4zu9hw');
+const engines = keys.map((key) => {return new imageSearch(key.cx, key.apiKey) });
 const options = {safe:true};
+var engineIndex = 0;
 
 commands = [
     {
@@ -18,13 +20,17 @@ module.exports = {
             if (regexMatch !== null) {
                 const searchQuery = regexMatch[0];
                 try {
-                    const [result] = await google.search(searchQuery, options);
+                    const [result] = await engines[engineIndex].search(searchQuery, options);
                     const attachment = new MessageAttachment(result.url);
                     msg.channel.send(attachment);
                 }
                 catch(e){
                     msg.channel.send('Sorry, something went wrong with that search. Amir will look into it');
                     console.log(e);
+                }
+                engineIndex++;
+                if (engineIndex == engines.length){
+                    engineIndex = 0;
                 }
             }
             else{

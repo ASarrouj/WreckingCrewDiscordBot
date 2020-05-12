@@ -1,4 +1,7 @@
-const puppeteer = require('puppeteer');
+const {MessageAttachment} = require('discord.js')
+const imageSearch = require('image-search-google');
+const google = new imageSearch('006750375323684879005:suqbjlmbbdh', 'AIzaSyD0a61XJErUdof14CNo6xan_f5jc4zu9hw');
+const options = {safe:true};
 
 commands = [
     {
@@ -14,40 +17,19 @@ module.exports = {
             const regexMatch = /(?<=!showMe ).+/.exec(msg.content);
             if (regexMatch !== null) {
                 const searchQuery = regexMatch[0];
-                const browser = await puppeteer.launch({
-                    headless: false
-                });
-                const page = await browser.newPage();
-                await page.goto('https://www.google.com/imghp?hl=en');
-                const searchXpath = "//input[@title=\"Search\"]"
-
-                const searchBar = await page.waitForXPath(searchXpath, {
-                    timeout: 10000,
-                });
-                await searchBar.type(searchQuery);
-
-                const submitXpath = "//button[@type=\"submit\"]";
-                const submitButton = await page.waitForXPath(submitXpath, {
-                    timeout: 10000,
-                });
-                await submitButton.click();
-
-                await page.waitForNavigation();
-
-                const firstImgXpath = "//div[@id=\"islrg\"]//img[1]";
-                const firstImage = await page.waitForXPath(firstImgXpath, {
-                    timeout: 10000,
-                })
-
-                const property = await firstImage.getProperty('src');
-                const link = await property._remoteObject.value;
-
-                msg.channel.send(`[This is what I found](${link})`);
+                try {
+                    const [result] = await google.search(searchQuery, options);
+                    const attachment = new MessageAttachment(result.url);
+                    msg.channel.send(attachment);
+                }
+                catch(e){
+                    msg.channel.send('Sorry, something went wrong with that search. Amir will look into it');
+                    console.log(e);
+                }
             }
             else{
-
+                msg.channel.send('You need to include a term to actually search');
             }
-            await browser.close();
         }
     }
 }

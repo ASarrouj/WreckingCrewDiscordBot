@@ -8,25 +8,37 @@ var engineIndex = 0;
 commands = [
     {
         message: '!showMe',
-        info: 'This command will Google search whatever comes after the \"!showMe\". Boofle will return the first image result of the search'
+        info: `This command will Google search whatever comes after the \"!showMe\". Boofle will return the first image result of the search`
     }
 ]
+const command = commands[0].message.toLowerCase();
 
 module.exports = {
     commands,
     func: async (msg) => {
-        if (msg.content.includes('!showMe') && msg.author.username !== "Boofle") {
-            const regexMatch = /(?<=!showMe ).+/.exec(msg.content);
+        if (msg.content.includes(command) && msg.author.username !== "Boofle") {
+            const regexMatch = new RegExp(`(?<=${command} ).+`).exec(msg.content);
             if (regexMatch !== null) {
                 const searchQuery = regexMatch[0];
                 try {
-                    const [result] = await engines[engineIndex].search(searchQuery, options);
+                    const results = await engines[engineIndex].search(searchQuery, options);
+                    const result = results.find((response) => {
+                        return /\.(jpg|jpeg|png|svg|pdf|gif|tiff|img)$/.test(response.url)
+                    });
+                    console.log(result)
                     const attachment = new MessageAttachment(result.url);
                     msg.channel.send(attachment);
                 }
                 catch(e){
-                    msg.channel.send('Sorry, something went wrong with that search. Amir will look into it');
-                    console.log(e);
+                    switch (e.message) {
+                        case "Response code 429 (Too Many Requests)":
+                            msg.channel.send(`Too many requests have been made to engine ${engineIndex}. If this issue persists we should look into adding more engines.`);
+                            break;
+                        default:
+                            msg.channel.send('Sorry, something went wrong with that search. Amir will look into it');
+                    }
+                        
+                    console.log(e.message);
                 }
                 engineIndex++;
                 if (engineIndex == engines.length){

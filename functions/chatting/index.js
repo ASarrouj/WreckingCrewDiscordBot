@@ -10,6 +10,11 @@
         info: 'Boofle recognizes this as one of the highest tier jokes, possibly second only to \"BOX OF SAND\"'
     },
     {
+        message: 'good bot',
+        reply: 'https://imgur.com/HaiJq9f',
+        info: 'Let Boofle know he\'s doing a good job'
+    },
+    {
         message: '!chas',
         reply: '<:lmao:547089522790498315> CHAS DOES IT AGAIN <:lmao:547089522790498315>',
         info: 'Use this when Chas posts \"heat\"'

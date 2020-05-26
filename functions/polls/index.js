@@ -22,19 +22,25 @@ const numberEmojis = [
 
 module.exports = {
     commands,
-    func: (msg) => {
+    func: async (msg) => {
         if (msg.content.includes(commands[0].message) && msg.author.username !== "Boofle") {
             const questionRegex = /(?<=!poll )[^[]+(?= \[)/;
             const optionsRegex = /(?<=\s\[)[^[]+(?=\])/g;
 
-            const question = questionRegex.exec(msg);
-            const options = optionsRegex.exec(msg);
+            const author = msg.guild.members.cache.get(msg.author.id);
+
+            let question = msg.content.match(questionRegex);
+            const options = msg.content.match(optionsRegex);
 
             if (question != null && options != null){
                 question = question[0];
 
                 const pollEmbed = {
                     embed: {
+                        author: {
+                            name: author.displayName,
+                            icon_url: author.user.avatarURL(),
+                        },
                         title: question,
                         description: "Vote on this poll by reacting with the emoji of the option you want to vote for.",
                         fields: options.map((option, index) => {
@@ -42,7 +48,8 @@ module.exports = {
                         })
                     }
                 }
-                msg.channel.send(pollEmbed);
+                await msg.channel.send(pollEmbed);
+                await msg.delete();
             }
             else{
                 msg.channel.send("Sorry, that isn't a valid format for this command.\nThe correct format is \"!poll Question [Option1] [Option2]\".");

@@ -1,4 +1,4 @@
-const msgFunctions = [require('./chatting'),require('./ftbTracker'),require('./imageSearch')];
+const msgFunctions = [require('./chatting'),require('./ftbTracker'),require('./imageSearch'),require('./polls')];
 module.exports = {
     init: (client) => {
                 

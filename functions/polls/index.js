@@ -24,6 +24,7 @@ module.exports = {
     commands,
     func: async (msg) => {
         if (msg.content.includes(commands[0].message) && msg.author.username !== "Boofle") {
+            console.log('poll');
             const questionRegex = /(?<=!poll )[^[]+(?= \[)/;
             const optionsRegex = /(?<=\s\[)[^[]+(?=\])/g;
 
@@ -44,7 +45,7 @@ module.exports = {
                         title: question,
                         description: "Vote on this poll by reacting with the emoji of the option you want to vote for.",
                         fields: options.map((option, index) => {
-                            return {name: numberEmojis[index], value: option}
+                            return {name: numberEmojis[index], value: option};
                         })
                     }
                 }

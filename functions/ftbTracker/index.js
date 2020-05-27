@@ -18,8 +18,13 @@ module.exports = {
             msgParts = msg.content.trim().split(/\s+/);
             if (msgParts.length === 1) {
                 msg.channel.send(Object.entries(ftbDatabase).reduce((accMsg, ftbEntry) => {
-                    let user = msg.guild.members.cache.get(ftbEntry[0]);
-                    return accMsg += `${user.displayName}: ${ftbEntry[1]}\n`;
+                    try {
+                        let user = msg.guild.members.cache.get(ftbEntry[0]);
+                        return accMsg += `${user.displayName}: ${ftbEntry[1]}\n`;
+                    }
+                    catch (e) {
+                        return accMsg;
+                    }
                 }, "FTB STANDINGS:\n"))
             }
             else if (msgParts.length === 3 && !Number.isNaN(parseInt(msgParts[1])) && /<@!?\d+>/.test(msgParts[2])) {

@@ -11,7 +11,7 @@ module.exports = {
                 module.func(msg);
             })
 
-            if (msg.content === '!help') {
+            if (msg.content === '!info') {
                 msg.channel.send(commands.reduce((accMsg, command) => {
                     return accMsg += `'${command.message}': ${command.info}\n`;
                 }, "Commands:\n"))

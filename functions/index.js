@@ -11,25 +11,42 @@ const adminRoleID = `714862931652903032`;
 
 module.exports = {
     init: (client) => {
-        const commands = publicCommands.reduce((acc, module) => {
+
+        const pubCommandsStr = publicCommands.reduce((acc, module) => {
             return acc.concat(module.commands);
-        }, [])
+        }, []);
+
+        const adminCommandsStr = adminCommands.reduce((acc, module) => {
+            return acc.concat(module.commands);
+        }, []);
 
         client.on('message', msg => {
-            publicCommands.forEach((module) => {
-                module.func(msg);
-            });
-
-            if (msg.guild.roles.cache.get(adminRoleID).members.has(msg.author.id)){
-                adminCommands.forEach((module) => {
+            if (msg.author.id != client.user.id) {
+                publicCommands.forEach((module) => {
                     module.func(msg);
-                })
-            }
+                });
 
-            if (msg.content === '!info') {
-                msg.channel.send(commands.reduce((accMsg, command) => {
-                    return accMsg += `'${command.message}': ${command.info}\n`;
-                }, "Commands:\n"))
+                const isAdmin = msg.guild.roles.cache.get(adminRoleID).members.has(msg.author.id);
+
+                if (isAdmin) {
+                    adminCommands.forEach((module) => {
+                        module.func(msg);
+                    })
+                }
+
+                if (msg.content === '!info') {
+                    let infoMessage = pubCommandsStr.reduce((accMsg, command) => {
+                        return accMsg += `'${command.message}': ${command.info}\n`;
+                    }, "Commands:\n");
+
+                    if (isAdmin) {
+                        infoMessage += '\n' + adminCommandsStr.reduce((accMsg, command) => {
+                            return accMsg += `'${command.message}': ${command.info}\n`;
+                        }, "Admin Commands:\n");
+                    }
+
+                    msg.author.send(infoMessage);
+                }
             }
         })
     }

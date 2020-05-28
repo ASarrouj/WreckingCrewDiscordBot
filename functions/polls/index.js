@@ -21,7 +21,7 @@ const numberEmojis = [
 module.exports = {
     commands,
     func: async (msg) => {
-        if (msg.content.includes(commands[0].message) && msg.author.username !== "Boofle") {
+        if (msg.content.startsWith(commands[0].message)){
             console.log('poll');
             const questionRegex = /(?<=!poll )[^[]+(?= \[)/;
             const optionsRegex = /(?<=\s\[)[^[]+(?=\])/g;
@@ -51,7 +51,7 @@ module.exports = {
                 await msg.delete();
             }
             else{
-                msg.channel.send("Sorry, that isn't a valid format for this command.\nThe correct format is \"!poll Question [Option1] [Option2]\".");
+                msg.author.send("Sorry, that isn't a valid format for this command.\nThe correct format is \"!poll Question [Option1] [Option2]\".");
             }
         }
     }

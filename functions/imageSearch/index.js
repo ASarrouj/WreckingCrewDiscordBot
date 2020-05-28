@@ -16,7 +16,7 @@ const command = commands[0].message.toLowerCase();
 module.exports = {
     commands,
     func: async (msg) => {
-        if (msg.content.includes(command) && msg.author.username !== "Boofle") {
+        if (msg.content.startsWith(command)) {
             const regexMatch = new RegExp(`(?<=${command} ).+`).exec(msg.content);
             if (regexMatch !== null) {
                 const searchQuery = regexMatch[0];
@@ -32,7 +32,7 @@ module.exports = {
                 catch(e){
                     switch (e.message) {
                         case "Response code 429 (Too Many Requests)":
-                            msg.channel.send(`Too many requests have been made to engine ${engineIndex}. If this issue persists we should look into adding more engines.`);
+                            msg.channel.send(`Too many requests have been made to search engine ${engineIndex}. If this issue persists we should look into adding more engines.`);
                             break;
                         default:
                             msg.channel.send('Sorry, something went wrong with that search. Amir will look into it');
@@ -46,7 +46,7 @@ module.exports = {
                 }
             }
             else{
-                msg.channel.send('You need to include a term to actually search');
+                msg.author.send('You need to include a term to actually search');
             }
         }
     }

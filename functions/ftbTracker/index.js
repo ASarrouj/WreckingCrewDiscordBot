@@ -1,5 +1,6 @@
 const fs = require('fs');
 path = require('path');
+const { idRegex } = require('./../../helpers').constants
 
 const filename = path.join(__dirname,'ftbDatabase.ign.json');
 let ftbDatabase = JSON.parse(fs.readFileSync(filename));
@@ -14,7 +15,7 @@ commands = [
 module.exports = {
     commands,
     func: (msg) => {
-        if (msg.content.includes('!ftb') && msg.author.username !== "Boofle") {
+        if (msg.content.startsWith('!ftb')) {
             msgParts = msg.content.trim().split(/\s+/);
             if (msgParts.length === 1) {
                 msg.channel.send(Object.entries(ftbDatabase).reduce((accMsg, ftbEntry) => {
@@ -27,7 +28,7 @@ module.exports = {
                     }
                 }, "FTB STANDINGS:\n"))
             }
-            else if (msgParts.length === 3 && !Number.isNaN(parseInt(msgParts[1])) && /<@!?\d+>/.test(msgParts[2])) {
+            else if (msgParts.length === 3 && !Number.isNaN(parseInt(msgParts[1])) && idRegex.test(msgParts[2])) {
                 const id = /\d+/.exec(msgParts[2])[0];
                 let user = null;
                 try {
@@ -46,7 +47,7 @@ module.exports = {
                 fs.writeFileSync(filename, JSON.stringify(ftbDatabase));
             }
             else {
-                msg.channel.send("Sorry, that isn't a valid format for this command.\nThe correct format is \"!ftb (pointChange) (@user)\", or simply \"!ftb\" to display current standings.")
+                msg.author.send("Sorry, that isn't a valid format for this command.\nThe correct format is \"!ftb (pointChange) (@user)\", or simply \"!ftb\" to display current standings.")
             }
         }
     }

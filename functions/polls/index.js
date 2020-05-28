@@ -1,5 +1,3 @@
-const { MessageEmbed } = require('discord.js');
-
 const commands = [
     {
         message: '!poll',

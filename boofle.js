@@ -1,12 +1,14 @@
 const Discord = require('discord.js');
-const client = new Discord.Client();
 const functions = require('./functions');
-const token = require('./token.ign.js');
+const tokens = require('./token.ign.js');
 
-client.on('ready', () => {
-    console.log('Bot is online');
-})
-
-functions.init(client);
-
-client.login(token);
+for (let [server,token] of Object.entries(tokens)) {
+    const client = new Discord.Client();
+    client.on('ready', () => {
+        console.log(`Bot is online on server ${server}`);
+    })
+    
+    functions.init(client);
+    
+    client.login(token);
+};

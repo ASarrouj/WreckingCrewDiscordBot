@@ -37,13 +37,11 @@ module.exports = {
                             else {
                                 isCorrectMedia = /\.(jpg|jpeg|png|svg|pdf|gif|tiff|img)$/.test(results[i].url);
                             }
-                            console.log(isCorrectMedia);
                             if (isCorrectMedia) {
                                 const attachment = new MessageAttachment(results[i].url);
                                 const sentMsg = await msg.channel.send(attachment);
                                 if (sentMsg.attachments.first().height != null){
                                     foundImage = true;
-                                    console.log('found')
                                     break;
                                 }
                                 else {

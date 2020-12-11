@@ -1,6 +1,8 @@
 const fs = require('fs');
 path = require('path');
 const { idRegex } = require('./../../helpers').constants
+const ftbRegex = /(?<=!ftb).*/;
+const pointRegex = /(?<=\s)[+-]?\d+/
 
 const filename = path.join(__dirname,'ftbDatabase.ign.json');
 let ftbDatabase = JSON.parse(fs.readFileSync(filename));
@@ -12,13 +14,31 @@ commands = [
     }
 ]
 
+const applyFtbPoints = async (id, pointAmount, channel) => {
+    let user = null;
+    try {
+        user = channel.guild.members.cache.get(id);
+    } catch (e) {
+        console.error(e)
+    }
+    if (Object.keys(ftbDatabase).includes(id)) {
+        ftbDatabase[id] += parseInt(pointAmount);
+        await channel.send(`${user.displayName} now has ${ftbDatabase[id]} FTB points.`)
+    }
+    else {
+        ftbDatabase[id] = parseInt(pointAmount);
+        await channel.send(`User ${user.displayName} has now been created, starting with ${ftbDatabase[id]} FTB points.`);
+    }
+    fs.writeFileSync(filename, JSON.stringify(ftbDatabase));
+}
+
 module.exports = {
     commands,
-    func: (msg) => {
-        if (msg.content.startsWith('!ftb')) {
-            msgParts = msg.content.trim().split(/\s+/);
-            if (msgParts.length === 1) {
-                msg.channel.send(Object.entries(ftbDatabase).reduce((accMsg, ftbEntry) => {
+    func: async (msg) => {
+        if (msg.content.includes('!ftb')) {
+            const ftbMsg = msg.content.match(ftbRegex)[0];
+            if (ftbMsg == "") {
+                await msg.channel.send(Object.entries(ftbDatabase).reduce((accMsg, ftbEntry) => {
                     try {
                         let user = msg.guild.members.cache.get(ftbEntry[0]);
                         return accMsg += `${user.displayName}: ${ftbEntry[1]}\n`;
@@ -27,28 +47,27 @@ module.exports = {
                         return accMsg;
                     }
                 }, "FTB STANDINGS:\n"))
+                return;
             }
-            else if (msgParts.length === 3 && !Number.isNaN(parseInt(msgParts[1])) && idRegex.test(msgParts[2])) {
-                const id = /\d+/.exec(msgParts[2])[0];
-                let user = null;
-                try {
-                    user = msg.guild.members.cache.get(id);
-                } catch (e) {
-                    console.error(e)
+
+            let id = ftbMsg.match(idRegex);
+            let pointAmt = ftbMsg.match(pointRegex);
+
+            if (pointAmt != null && id != null) {
+                pointAmt = parseInt(pointAmt[0]);
+
+                if (pointAmt < -20 || pointAmt > 20){
+                    await msg.author.send("Point values must be between -20 and +20.")
+                    return;
                 }
-                if (Object.keys(ftbDatabase).includes(id)) {
-                    ftbDatabase[id] += parseInt(msgParts[1]);
-                    msg.channel.send(`${user.displayName} now has ${ftbDatabase[id]} FTB points.`)
-                }
-                else {
-                    ftbDatabase[id] = parseInt(msgParts[1]);
-                    msg.channel.send(`User ${user.displayName} has now been created, starting with ${ftbDatabase[id]} FTB points.`);
-                }
-                fs.writeFileSync(filename, JSON.stringify(ftbDatabase));
+
+                id = /\d+/.exec(id[0])[0];
+                await applyFtbPoints(id, pointAmt, msg.channel);
+                return;
             }
-            else {
-                msg.author.send("Sorry, that isn't a valid format for this command.\nThe correct format is \"!ftb (pointChange) (@user)\", or simply \"!ftb\" to display current standings.")
-            }
+
+            await msg.author.send("Sorry, that isn't a valid format for this command.\nThe correct format is \"!ftb (pointChange) (@user)\", or simply \"!ftb\" to display current standings.")
         }
-    }
+    },
+    applyFtbPoints,
 }

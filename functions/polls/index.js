@@ -41,12 +41,18 @@ const numberEmojis = [
     },
 ]
 
+const XEmoji = {
+    emoji: '❌',
+    text: ':x:'
+}
+
 module.exports = {
     commands,
     func: async (msg) => {
         if (msg.content.startsWith(commands[0].message)) {
             const questionRegex = /(?<=!poll )[^[]+(?= \[)/;
             const optionsRegex = /(?<=\s\[)[^[]+(?=\])/g;
+            const timeRegex = /(?<=\s)[\d\.]+(?=h)/;
 
             const author = msg.guild.members.cache.get(msg.author.id);
             const memberCount = msg.guild.members.cache.size;
@@ -55,9 +61,19 @@ module.exports = {
             let question = msg.content.match(questionRegex);
             const options = msg.content.match(optionsRegex);
             const possibleReactions = numberEmojis.slice(0, options.length);
+            const pollTime = msg.content.match(timeRegex);
 
             if (question != null && options != null) {
                 question = question[0];
+                let pollHours = pollTime != null ? parseFloat(pollTime[0]) : 1.0;
+                if (pollHours < 0.25){
+                    pollHours = 0.25;
+                }
+                else if (pollHours > 48.0){
+                    pollHours = 48.0;
+                }
+                let pollDuration = pollHours * 60 * 60 * 1000;
+                console.log(pollHours);
 
                 const pollEmbed = {
                     embed: {
@@ -71,7 +87,7 @@ module.exports = {
                             return { name: numberEmojis[index].text, value: option, count: 0 };
                         }),
                         footer: {
-                            text: `Poll ID: ${moment().format('X')}`,
+                            text: `Poll Duration: ${pollHours} ${pollHours == 1 ? "hour" : "hours"}`,
                         }
                     }
                 }
@@ -81,26 +97,32 @@ module.exports = {
                 const filter = (reaction) => {
                     return possibleReactions.find(possibleReaction => {
                         return possibleReaction.emoji == reaction.emoji.name;
-                    });
+                    }) || reaction.emoji.name == XEmoji.emoji;
                 }
-                const collector = sentMsg.createReactionCollector(filter, { maxUsers: memberCount - 1, time: 3600000 });
+                const collector = sentMsg.createReactionCollector(filter, { maxUsers: memberCount - 1, time: pollDuration });
 
                 collector.on('collect', (reaction, user) => {
+                    if (user.id == author.id && reaction.emoji.name == XEmoji.emoji){
+                        collector.stop();
+                        return;
+                    }
                     if (votedUsers.includes(user.id)) {
-                        user.send("Sorry, you cannot vote twice and your original vote cannot be changed.")
+                        user.send("Sorry, you cannot vote twice and your original vote cannot be changed.");
+                        return;
                     }
-                    else {
-                        const validReactionIndex = possibleReactions.findIndex(possibleReaction => {
-                            return possibleReaction.emoji == reaction.emoji.name;
-                        });
+                    const validReactionIndex = possibleReactions.findIndex(possibleReaction => {
+                        return possibleReaction.emoji == reaction.emoji.name;
+                    });
 
-                        pollEmbed.embed.fields[validReactionIndex].count++;
-                        votedUsers.push(user.id);
-                    }
+                    pollEmbed.embed.fields[validReactionIndex].count++;
+                    votedUsers.push(user.id);
                 })
 
                 collector.on('end', async collected => {
-                    if (collected.size == memberCount - 1) {
+                    if (collected.last().emoji.name == XEmoji.emoji){
+                        pollEmbed.embed.description = "The poll was ended early by the author. Here were the collected results."
+                    }
+                    else if (collected.size == memberCount - 1) {
                         pollEmbed.embed.description = "Everyone has voted. Here are the results of the poll.";
                     }
                     else {
@@ -110,7 +132,7 @@ module.exports = {
                         return b.count - a.count;
                     })
                     pollEmbed.embed.fields = pollEmbed.embed.fields.map(field => {
-                        field.name += `   ${field.count} vote(s)`;
+                        field.name += `   ${field.count} ${field.count == 1 ? "vote" : "votes"}`;
                         return field;
                     })
                     await sentMsg.channel.send(pollEmbed);

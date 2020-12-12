@@ -1,4 +1,3 @@
-const moment = require('moment');
 const commands = [
     {
         message: '!poll',
@@ -55,7 +54,7 @@ module.exports = {
             const timeRegex = /(?<=\s)[\d\.]+(?=h)/;
 
             const author = msg.guild.members.cache.get(msg.author.id);
-            const memberCount = msg.guild.members.cache.size;
+            const memberCount = msg.guild.members.cache.size - 1;
             const votedUsers = [];
 
             let question = msg.content.match(questionRegex);
@@ -99,7 +98,7 @@ module.exports = {
                         return possibleReaction.emoji == reaction.emoji.name;
                     }) || reaction.emoji.name == XEmoji.emoji;
                 }
-                const collector = sentMsg.createReactionCollector(filter, { maxUsers: memberCount - 1, time: pollDuration });
+                const collector = sentMsg.createReactionCollector(filter, { maxUsers: memberCount, time: pollDuration });
 
                 collector.on('collect', (reaction, user) => {
                     if (user.id == author.id && reaction.emoji.name == XEmoji.emoji){
@@ -122,7 +121,7 @@ module.exports = {
                     if (collected.last().emoji.name == XEmoji.emoji){
                         pollEmbed.embed.description = "The poll was ended early by the author. Here were the collected results."
                     }
-                    else if (collected.size == memberCount - 1) {
+                    else if (collected.size == memberCount) {
                         pollEmbed.embed.description = "Everyone has voted. Here are the results of the poll.";
                     }
                     else {

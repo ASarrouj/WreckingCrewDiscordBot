@@ -15,7 +15,7 @@ commands = [
 ]
 
 const applyFtbPoints = async (id, pointAmount, channel) => {
-    let user = null;
+    let user, logMsg = null;
     try {
         user = channel.guild.members.cache.get(id);
     } catch (e) {
@@ -23,13 +23,14 @@ const applyFtbPoints = async (id, pointAmount, channel) => {
     }
     if (Object.keys(ftbDatabase).includes(id)) {
         ftbDatabase[id] += parseInt(pointAmount);
-        await channel.send(`${user.displayName} now has ${ftbDatabase[id]} FTB points.`)
+        logMsg = `${user.displayName} now has ${ftbDatabase[id]} FTB points.`;
     }
     else {
         ftbDatabase[id] = parseInt(pointAmount);
-        await channel.send(`User ${user.displayName} has now been created, starting with ${ftbDatabase[id]} FTB points.`);
+        logMsg = `User ${user.displayName} has now been created, starting with ${ftbDatabase[id]} FTB points.`;
     }
     fs.writeFileSync(filename, JSON.stringify(ftbDatabase));
+    return logMsg;
 }
 
 module.exports = {
@@ -62,7 +63,8 @@ module.exports = {
                 }
 
                 id = /\d+/.exec(id[0])[0];
-                await applyFtbPoints(id, pointAmt, msg.channel);
+                const replyMessage = await applyFtbPoints(id, pointAmt, msg.channel);
+                await msg.channel.send(replyMessage);
                 return;
             }
 

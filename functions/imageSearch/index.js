@@ -2,7 +2,7 @@ const keys = require('./searchKeys.ign.js');
 const { MessageAttachment } = require('discord.js');
 const imageSearch = require('image-search-google');
 const engines = keys.map((key) => { return new imageSearch(key.cx, key.apiKey) });
-const options = { safe: true };
+const options = { safe: "active" };
 var engineIndex = 0;
 
 const commands = [

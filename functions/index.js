@@ -4,7 +4,14 @@ path = require('path');
 const filename = path.join(__dirname,'./permissions/permissions.ign.json');
 let permissionsDB = JSON.parse(fs.readFileSync(filename));
 
-const publicMsgCommands = [require('./chatting'),require('./ftbTracker'),require('./imageSearch'),require('./polls'),require('./chatFilter')];
+const publicMsgCommands = [
+    require('./chatting'), 
+    require('./ftbTracker'), 
+    require('./imageSearch'), 
+    require('./polls'), 
+    require('./chatFilter'),
+    require('./archiver')
+];
 const editFunctions = [require('./chatFilter')];
 const adminCommands = [];
 

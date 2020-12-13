@@ -72,7 +72,6 @@ module.exports = {
                     pollHours = 48.0;
                 }
                 let pollDuration = pollHours * 60 * 60 * 1000;
-                console.log(pollHours);
 
                 const pollEmbed = {
                     embed: {
@@ -82,9 +81,19 @@ module.exports = {
                         },
                         title: question,
                         description: "Vote on this poll by reacting with the emoji of the option you want to vote for.",
-                        fields: options.map((option, index) => {
-                            return { name: numberEmojis[index].text, value: option, count: 0 };
-                        }),
+                        fields: (() => {
+                            let fields = [];
+                            for (let i = 0; i < options.length; i++){
+                                if (i % 3 == 2){
+                                    fields.push({
+                                        name: '\u200b',
+                                        value: '\u200b',
+                                    });
+                                }
+                                fields.push({ name: numberEmojis[i].text, value: options[i], count: 0 , inline: true});
+                            }
+                            return fields;
+                        })(),
                         footer: {
                             text: `Poll Duration: ${pollHours} ${pollHours == 1 ? "hour" : "hours"}`,
                         }

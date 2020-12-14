@@ -3,6 +3,7 @@ path = require('path');
 
 const filename = path.join(__dirname,'./permissions/permissions.ign.json');
 let permissionsDB = JSON.parse(fs.readFileSync(filename));
+let members = [];
 
 const publicMsgCommands = [
     require('./chatting'), 
@@ -20,7 +21,7 @@ const adminRoleID = `714862931652903032`;
 module.exports = {
     init: (client) => {
 
-        const { amir } = require('./../helpers').admins
+        const { amir } = require('./../helpers').admins;
 
         const pubCommandsStr = publicMsgCommands.reduce((acc, module) => {
             return acc.concat(module.commands);
@@ -30,10 +31,22 @@ module.exports = {
             return acc.concat(module.commands);
         }, []);
 
+        client.on('ready', async () => {
+            console.log(`Bot is online on server ${client.guilds.cache.first().name}`)
+            memberCount = client.guilds.cache.first().members.fetch()
+                .then(members => {
+                    return members.filter(member => {
+                        return !member.user.bot}).size;
+                }).catch((error) => {
+                    console.log(error)
+                    return 0;
+                });
+        });
+
         client.on('message', msg => {
             if (msg.author.id != client.user.id) {
                 publicMsgCommands.forEach((module) => {
-                    module.func(msg);
+                    module.func(msg, memberCount);
                 });
 
                 const isAdmin = false;
@@ -71,5 +84,8 @@ module.exports = {
                 })
             }
         })
+    },
+    fetchMembers: (client) => {
+        console.log(client)
     }
 }

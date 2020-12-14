@@ -26,13 +26,13 @@ const XEmoji = {
 
 module.exports = {
     commands,
-    func: async (msg) => {
+    func: async (msg, memberCount) => {
         if (msg.content.startsWith(commands[0].message)) {
             const author = msg.guild.members.cache.get(msg.author.id);
             let pollEmbed = {}, archiveContent = {};
 
             if (!msg.embeds[0])
-                await wait(450);
+                await wait(500);
 
             if (msg.attachments.size == 1) {
                 pollEmbed = new MessageEmbed()
@@ -51,7 +51,6 @@ module.exports = {
                 pollEmbed = new MessageEmbed()
                 .setAuthor(author.displayName, author.user.avatarURL())
                 .setTitle("Should this be added to the archives?")
-                .setImage(msg.embeds[0].url)
                 .addFields([
                     { name: thumbsUpEmoji.text, value: "Yes", inline: true },
                     { name: thumbsDownEmoji.text, value: "No", inline: true },
@@ -75,6 +74,7 @@ module.exports = {
                         { name: thumbsDownEmoji.text, value: "No", count: 0, inline: true },
                     ]);
                 archiveContent = pollEmbed.url;
+                await msg.delete();
             }
             else if (msg.embeds && msg.embeds[0].type == 'video') {
                 pollEmbed = new MessageEmbed()
@@ -91,6 +91,7 @@ module.exports = {
                         { name: thumbsDownEmoji.text, value: "No", count: 0, inline: true },
                     ]);
                 archiveContent = pollEmbed.url;
+                await msg.delete();
             }
             else {
                 msg.author.send("Nothing archivable detected. Currently supported content is tweets, youtube links, and images.");
@@ -105,11 +106,10 @@ module.exports = {
                 msg.author.send("There is no archive channel in this server. Please message an admin to see if one should be added.");
                 return;
             } 
-            const memberCount = msg.guild.members.cache.size - 1;
+            console.log(memberCount);
             const votedUsers = [];
 
             const sentMsg = await msg.channel.send(pollEmbed);
-            await msg.delete();
 
             let yesCount = 0, noCount = 0;
 

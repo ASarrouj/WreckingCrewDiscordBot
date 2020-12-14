@@ -47,14 +47,13 @@ const XEmoji = {
 
 module.exports = {
     commands,
-    func: async (msg) => {
+    func: async (msg, memberCount) => {
         if (msg.content.startsWith(commands[0].message)) {
             const questionRegex = /(?<=!poll )[^[]+(?= \[)/;
             const optionsRegex = /(?<=\s\[)[^[]+(?=\])/g;
             const timeRegex = /(?<=\s)[\d\.]+(?=h)/;
 
             const author = msg.guild.members.cache.get(msg.author.id);
-            const memberCount = msg.guild.members.cache.size - 1;
             const votedUsers = [];
 
             let question = msg.content.match(questionRegex);

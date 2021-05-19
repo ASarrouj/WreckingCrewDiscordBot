@@ -3,7 +3,6 @@ path = require('path');
 
 const filename = path.join(__dirname,'./permissions/permissions.ign.json');
 let permissionsDB = JSON.parse(fs.readFileSync(filename));
-let members = [];
 
 const publicMsgCommands = [
     require('./chatting'), 
@@ -21,10 +20,14 @@ const adminRoleID = `714862931652903032`;
 module.exports = {
     init: (client) => {
 
+        let memberCount;
         const { amir } = require('./../helpers').admins;
 
         const pubCommandsStr = publicMsgCommands.reduce((acc, module) => {
-            return acc.concat(module.commands);
+            if (module.commands){
+                return acc.concat(module.commands);
+            }
+            return acc;
         }, []);
 
         const adminCommandsStr = adminCommands.reduce((acc, module) => {
@@ -33,14 +36,17 @@ module.exports = {
 
         client.on('ready', async () => {
             console.log(`Bot is online on server ${client.guilds.cache.first().name}`)
-            memberCount = client.guilds.cache.first().members.fetch()
-                .then(members => {
-                    return members.filter(member => {
-                        return !member.user.bot}).size;
-                }).catch((error) => {
-                    console.log(error)
-                    return 0;
-                });
+
+            try {
+                const members = await client.guilds.cache.first().members.fetch();
+                memberCount = await members.filter(member => {
+                    return !member.user.bot
+                }).size;
+            }
+            catch (error){
+                console.log(error);
+                memberCount = 0;
+            }
         });
 
         client.on('message', msg => {
@@ -51,7 +57,7 @@ module.exports = {
 
                 const isAdmin = false;
                 try{
-                    const isAdmin = msg.guild.roles.cache.get(adminRoleID).members.has(msg.author.id);
+                    isAdmin = msg.guild.roles.cache.get(adminRoleID).members.has(msg.author.id);
                 }
                 catch(e){}
 

@@ -61,8 +61,8 @@ module.exports = {
             const possibleReactions = numberEmojis.slice(0, options.length);
             const pollTime = msg.content.match(timeRegex);
 
-            if (question != null && options != null) {
-                question = question[0];
+            if (question != null || options != null) {
+                question = question[0].slice(0, 255);
                 let pollHours = pollTime != null ? parseFloat(pollTime[0]) : 1.0;
                 if (pollHours < 0.25){
                     pollHours = 0.25;

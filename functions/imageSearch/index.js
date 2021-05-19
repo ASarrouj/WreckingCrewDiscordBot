@@ -3,7 +3,7 @@ const { MessageAttachment } = require('discord.js');
 const imageSearch = require('image-search-google');
 const engines = keys.map((key) => { return new imageSearch(key.cx, key.apiKey) });
 const options = { safe: "active" };
-var engineIndex = 0;
+var engineIndex = 0; 
 
 const commands = [
     {
@@ -21,7 +21,7 @@ module.exports = {
     func: async (msg) => {
         commands.forEach(async (command) => {
             command.message = command.message.toLowerCase();
-            msg.content = msg.content.toLowerCase();
+            msg.content = msg.content.toLowerCase();                                                                                               
             if (msg.content.startsWith(command.message)) {
                 const regexMatch = new RegExp(`(?<=${command.message} ).+`).exec(msg.content);
                 if (regexMatch !== null) {

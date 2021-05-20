@@ -35,6 +35,7 @@ const applyFtbPoints = async (id, pointAmount, channel) => {
 
 module.exports = {
     commands,
+    commandName: 'ftb',
     func: async (msg) => {
         if (msg.content.includes('!ftb')) {
             const ftbMsg = msg.content.match(ftbRegex)[0];
@@ -71,5 +72,43 @@ module.exports = {
             await msg.author.send("Sorry, that isn't a valid format for this command.\nThe correct format is \"!ftb (pointChange) (@user)\", or simply \"!ftb\" to display current standings.")
         }
     },
+    run: async(payload => {
+        console.log(payload.data)
+        
+        const subCommandOption = payload.data.options[0];
+
+        if (subCommandOption.name === 'show'){
+            return {
+                content: Object.entries(ftbDatabase).reduce((accMsg, ftbEntry) => {
+                    try {
+                        let user = msg.guild.members.cache.get(ftbEntry[0]);
+                        return accMsg += `${user.displayName}: ${ftbEntry[1]}\n`;
+                    }
+                    catch (e) {
+                        return accMsg;
+                    }
+                }, "FTB STANDINGS:\n"),
+            }
+        }
+        else if (subCommandOption.name === 'edit'){
+            const user = subCommandOption.options.find(option => {
+                return option.name == 'user';
+            });
+            const pointAmt = subCommandOption.options.find(option => {
+                return option.name == 'points';
+            });
+
+            if (pointAmt < -20 || pointAmt > 20){
+                return {
+                    content: "Point values must be between -20 and +20.",
+                    flags: 64, // Means only sender can see this
+                };
+            }
+
+            return {
+                content: await applyFtbPoints(user.id, pointAmt, msg.channel),
+            };
+        }
+    }),
     applyFtbPoints,
 }

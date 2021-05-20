@@ -4,11 +4,15 @@ path = require('path');
 const filename = path.join(__dirname,'./permissions/permissions.ign.json');
 let permissionsDB = JSON.parse(fs.readFileSync(filename));
 
+const botCommands = [
+    require('./ftbTracker'),
+]
+
 const publicMsgCommands = [
-    require('./chatting'), 
-    require('./ftbTracker'), 
-    require('./imageSearch'), 
-    require('./polls'), 
+    require('./chatting'),
+    require('./ftbTracker'),
+    require('./imageSearch'),
+    require('./polls'),
     require('./chatFilter'),
     require('./archiver')
 ];
@@ -34,8 +38,17 @@ module.exports = {
             return acc.concat(module.commands);
         }, []);
 
+        function getApp(guildId) {
+            const app = client.api.applications(client.user.id);
+            if (guildId){
+                app.guilds(guildId);
+            }
+            return app;
+        }
+
         client.on('ready', async () => {
             console.log(`Bot is online on server ${client.guilds.cache.first().name}`)
+            const slashCommands = await getApp('406273931956453378').commands.get();
 
             try {
                 const members = await client.guilds.cache.first().members.fetch();
@@ -48,6 +61,19 @@ module.exports = {
                 memberCount = 0;
             }
         });
+
+        client.ws.on('INTERACTION_CREATE', async (interaction) => {
+            const sentCommand = interaction.data.name.toLowerCase();
+
+            const linkedCommand = botCommands.find(botCommand => {
+                return botCommand.commandName === sentCommand;
+            });
+
+            client.api.interactions(interaction.id, interaction.token).callback.post({
+                type: 4,
+                data: await linkedCommand.run(),
+            });
+        })
 
         client.on('message', msg => {
             if (msg.author.id != client.user.id) {
@@ -91,7 +117,4 @@ module.exports = {
             }
         })
     },
-    fetchMembers: (client) => {
-        console.log(client)
-    }
 }

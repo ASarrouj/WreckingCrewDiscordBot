@@ -1,0 +1,30 @@
+{
+    "name": "ftb",
+    "description": "Manages the ForTheBoys points for users of the server",
+    "options": [
+        {
+            "name": "show",
+            "description": "Displays current FTB point totals for users of the server",
+            "type": 1
+        },
+        {
+            "name": "edit",
+            "description": "Adds or subtracts a user's FTB points, must be between +-20",
+            "type": 1,
+            "options": [
+                {
+                    "name": "user",
+                    "description": "The user to edit",
+                    "type": 6,
+                    "required": true
+                },
+                {
+                    "name": "points",
+                    "description": "The amount of points to add or subtract",
+                    "type": 4,
+                    "required": true
+                }
+            ]
+        }
+    ]
+}

@@ -1,7 +1,7 @@
 const fs = require('fs');
 path = require('path');
 
-const filename = path.join(__dirname,'./permissions/permissions.ign.json');
+const filename = path.join(__dirname, './permissions/permissions.ign.json');
 let permissionsDB = JSON.parse(fs.readFileSync(filename));
 
 const botCommands = [
@@ -24,11 +24,11 @@ const adminRoleID = `714862931652903032`;
 module.exports = {
     init: (client) => {
 
-        let memberCount;
+        let memberCount, guild;
         const { amir } = require('./../helpers').admins;
 
         const pubCommandsStr = publicMsgCommands.reduce((acc, module) => {
-            if (module.commands){
+            if (module.commands) {
                 return acc.concat(module.commands);
             }
             return acc;
@@ -38,25 +38,17 @@ module.exports = {
             return acc.concat(module.commands);
         }, []);
 
-        function getApp(guildId) {
-            const app = client.api.applications(client.user.id);
-            if (guildId){
-                app.guilds(guildId);
-            }
-            return app;
-        }
-
         client.on('ready', async () => {
-            console.log(`Bot is online on server ${client.guilds.cache.first().name}`)
-            const slashCommands = await getApp('406273931956453378').commands.get();
+            guild = client.guilds.cache.first();
+            console.log(`Bot is online on server ${guild.name}`);
 
             try {
-                const members = await client.guilds.cache.first().members.fetch();
+                const members = await guild.members.fetch();
                 memberCount = await members.filter(member => {
                     return !member.user.bot
                 }).size;
             }
-            catch (error){
+            catch (error) {
                 console.log(error);
                 memberCount = 0;
             }
@@ -68,10 +60,13 @@ module.exports = {
             const linkedCommand = botCommands.find(botCommand => {
                 return botCommand.commandName === sentCommand;
             });
+            console.log(interaction.data.resolved);
 
-            client.api.interactions(interaction.id, interaction.token).callback.post({
-                type: 4,
-                data: await linkedCommand.run(),
+            await client.api.interactions(interaction.id, interaction.token).callback.post({
+                data: {
+                    type: 4,
+                    data: await linkedCommand.run(interaction, guild),
+                }
             });
         })
 
@@ -82,10 +77,10 @@ module.exports = {
                 });
 
                 const isAdmin = false;
-                try{
+                try {
                     isAdmin = msg.guild.roles.cache.get(adminRoleID).members.has(msg.author.id);
                 }
-                catch(e){}
+                catch (e) { }
 
                 if (isAdmin) {
                     adminCommands.forEach((module) => {
@@ -110,7 +105,7 @@ module.exports = {
         })
 
         client.on('messageUpdate', (oldMsg, newMsg) => {
-            if (oldMsg.author.id != client.user.id){
+            if (oldMsg.author.id != client.user.id) {
                 editFunctions.forEach((editFunc) => {
                     editFunc.func(newMsg);
                 })

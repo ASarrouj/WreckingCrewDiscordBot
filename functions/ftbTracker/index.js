@@ -14,13 +14,21 @@ commands = [
     }
 ]
 
-const applyFtbPoints = async (id, pointAmount, channel) => {
+const applyFtbPoints = async (id, pointAmount, channel, displayName) => {
     let user, logMsg = null;
-    try {
-        user = channel.guild.members.cache.get(id);
-    } catch (e) {
-        console.error(e)
+    if (channel){
+        try {
+            user = channel.guild.members.cache.get(id);
+        } catch (e) {
+            console.error(e)
+        }
     }
+    else {
+        user = {
+            displayName,
+        }
+    }
+    console.log(channel)
     if (Object.keys(ftbDatabase).includes(id)) {
         ftbDatabase[id] += parseInt(pointAmount);
         logMsg = `${user.displayName} now has ${ftbDatabase[id]} FTB points.`;
@@ -72,16 +80,14 @@ module.exports = {
             await msg.author.send("Sorry, that isn't a valid format for this command.\nThe correct format is \"!ftb (pointChange) (@user)\", or simply \"!ftb\" to display current standings.")
         }
     },
-    run: async(payload => {
-        console.log(payload.data)
-        
+    run: async (payload, guild) => {        
         const subCommandOption = payload.data.options[0];
 
         if (subCommandOption.name === 'show'){
             return {
                 content: Object.entries(ftbDatabase).reduce((accMsg, ftbEntry) => {
                     try {
-                        let user = msg.guild.members.cache.get(ftbEntry[0]);
+                        let user = guild.members.cache.get(ftbEntry[0]);
                         return accMsg += `${user.displayName}: ${ftbEntry[1]}\n`;
                     }
                     catch (e) {
@@ -91,12 +97,12 @@ module.exports = {
             }
         }
         else if (subCommandOption.name === 'edit'){
-            const user = subCommandOption.options.find(option => {
+            const userId = subCommandOption.options.find(option => {
                 return option.name == 'user';
-            });
+            }).value;
             const pointAmt = subCommandOption.options.find(option => {
                 return option.name == 'points';
-            });
+            }).value;
 
             if (pointAmt < -20 || pointAmt > 20){
                 return {
@@ -104,11 +110,19 @@ module.exports = {
                     flags: 64, // Means only sender can see this
                 };
             }
+            if (pointAmt === 0){
+                return {
+                    content: "Point value cannot be 0.",
+                    flags: 64, // Means only sender can see this
+                };
+            }
+
+            const feedbackMessage = await applyFtbPoints(userId, pointAmt, null, guild.members.cache.get(userId).displayName);
 
             return {
-                content: await applyFtbPoints(user.id, pointAmt, msg.channel),
+                content: feedbackMessage,
             };
         }
-    }),
+    },
     applyFtbPoints,
 }

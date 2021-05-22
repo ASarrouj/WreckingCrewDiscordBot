@@ -83,7 +83,7 @@ module.exports = {
     run: async (payload, guild) => {        
         const subCommandOption = payload.data.options[0];
 
-        if (subCommandOption.name === 'show'){
+        if (subCommandOption.name === 'list'){
             return {
                 content: Object.entries(ftbDatabase).reduce((accMsg, ftbEntry) => {
                     try {

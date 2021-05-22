@@ -1,4 +1,3 @@
- const { amir } = require('./../../helpers').admins
  const commands = [];
 
  const charGroups = {

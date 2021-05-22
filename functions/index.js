@@ -1,41 +1,33 @@
 const fs = require('fs');
 path = require('path');
-
-const filename = path.join(__dirname, './permissions/permissions.ign.json');
-let permissionsDB = JSON.parse(fs.readFileSync(filename));
+const axios = require('axios');
 
 const botCommands = [
+    ...require('./chatting'),
     require('./ftbTracker'),
+    require('./imageSearch'),
+    require('./polls'),
 ]
 
 const publicMsgCommands = [
-    require('./chatting'),
-    require('./ftbTracker'),
     require('./imageSearch'),
     require('./polls'),
     require('./chatFilter'),
     require('./archiver')
 ];
 const editFunctions = [require('./chatFilter')];
-const adminCommands = [];
 
 const adminRoleID = `714862931652903032`;
 
 module.exports = {
     init: (client) => {
-
         let memberCount, guild;
-        const { amir } = require('./../helpers').admins;
 
         const pubCommandsStr = publicMsgCommands.reduce((acc, module) => {
             if (module.commands) {
                 return acc.concat(module.commands);
             }
             return acc;
-        }, []);
-
-        const adminCommandsStr = adminCommands.reduce((acc, module) => {
-            return acc.concat(module.commands);
         }, []);
 
         client.on('ready', async () => {
@@ -60,14 +52,35 @@ module.exports = {
             const linkedCommand = botCommands.find(botCommand => {
                 return botCommand.commandName === sentCommand;
             });
-            console.log(interaction.data.resolved);
 
-            await client.api.interactions(interaction.id, interaction.token).callback.post({
-                data: {
-                    type: 4,
-                    data: await linkedCommand.run(interaction, guild),
+            if (linkedCommand){
+                await client.api.interactions(interaction.id, interaction.token).callback.post({
+                    data: {
+                        type: 4,
+                        data: await linkedCommand.run(interaction, guild),
+                    }
+                });
+                const appId = (await client.fetchApplication()).id;
+    
+                const responseMsg = (await axios.get(`https://discord.com/api/v8/webhooks/${appId}/${interaction.token}/messages/@original`)).data;
+                const messageObject = client.guilds.cache.first().channels.cache.get(responseMsg.channel_id).messages.cache.get(responseMsg.id);
+                messageObject.interactionAuthor = responseMsg.interaction.user;
+
+                if (linkedCommand.followup){
+                    linkedCommand.followup(messageObject, memberCount);
                 }
-            });
+            }
+            else {
+                await client.api.interactions(interaction.id, interaction.token).callback.post({
+                    data: {
+                        type: 4,
+                        data: {
+                            content: 'The logic for this command has not yet been implemented.'
+                        },
+                    }
+                });
+            }
+
         })
 
         client.on('message', msg => {

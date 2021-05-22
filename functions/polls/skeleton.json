@@ -1,0 +1,66 @@
+{
+    "name": "poll",
+    "description": "Creates a poll for the server to vote on",
+    "options": [
+        {
+            "name": "question",
+            "description": "The question for the people to vote on",
+            "type": 3,
+            "required": true
+        },
+        {
+            "name": "choice1",
+            "description": "The first option for the poll",
+            "type": 3,
+            "required": true
+        },
+        {
+            "name": "choice2",
+            "description": "The second option for the poll",
+            "type": 3,
+            "required": true
+        },
+        {
+            "name": "time",
+            "description": "Duration of the poll in hours, will default to 1 if not specified",
+            "type": 4,
+            "required": false
+        },
+        {
+            "name": "choice3",
+            "description": "The third option for the poll",
+            "type": 3,
+            "required": false
+        },
+        {
+            "name": "choice4",
+            "description": "The fourth option for the poll",
+            "type": 3,
+            "required": false
+        },
+        {
+            "name": "choice5",
+            "description": "The fifth option for the poll",
+            "type": 3,
+            "required": false
+        },
+        {
+            "name": "choice6",
+            "description": "The sixth option for the poll",
+            "type": 3,
+            "required": false
+        },
+        {
+            "name": "choice7",
+            "description": "The seventh option for the poll",
+            "type": 3,
+            "required": false
+        },
+        {
+            "name": "choice8",
+            "description": "The eighth option for the poll",
+            "type": 3,
+            "required": false
+        }
+    ]
+}

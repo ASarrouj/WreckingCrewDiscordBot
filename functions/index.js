@@ -77,7 +77,8 @@ module.exports = {
                         data: {
                             content: 'The logic for this command has not yet been implemented.'
                         },
-                    }
+                    },
+                    flags: 64,
                 });
             }
 

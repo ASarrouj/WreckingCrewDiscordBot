@@ -15,6 +15,7 @@ module.exports = {
             part: 'snippet',
             q: query,
             maxResults: 3,
+            type: 'video',
         });
 
         const videoId = searchResponse.data.items[0].id.videoId;
@@ -24,7 +25,10 @@ module.exports = {
         }
 
         return {
-            content: `https://www.youtube.com/watch?v=${videoId}`,
+            content: `**${query} https://www.youtube.com/watch?v=${videoId}**`,
         };
+    },
+    followup: async (messageObject) => {
+        console.log(messageObject.embeds)
     }
 }

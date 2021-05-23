@@ -1,0 +1,12 @@
+{
+    "name": "youtube",
+    "description": "Enacts a search for YouTube video",
+    "options": [
+        {
+            "name": "query",
+            "description": "Search query for the video",
+            "type": 3,
+            "required": true
+        }
+    ]
+}

@@ -1,7 +1,7 @@
 path = require('path');
 const axios = require('axios');
 
-const botCommands = [
+const slashCommands = [
     ...require('./chatting'),
     require('./ftbTracker'),
     require('./imageSearch'),
@@ -9,7 +9,7 @@ const botCommands = [
     require('./youtube')
 ]
 
-const publicMsgCommands = [
+const msgFunctions = [
     require('./imageSearch'),
     require('./chatFilter'),
     require('./archiver')
@@ -20,8 +20,6 @@ const extraGuildInfo = [];
 
 module.exports = {
     init: (client) => {
-        let memberCount;
-
         client.on('ready', async () => {
             client.guilds.cache.forEach(guild => {
                 console.log(`Bot is online on server ${guild.name}`);
@@ -40,13 +38,12 @@ module.exports = {
                     }
                 }
             })
-
         });
 
         client.ws.on('INTERACTION_CREATE', async (interaction) => {
             const sentCommand = interaction.data.name.toLowerCase();
 
-            const linkedCommand = botCommands.find(botCommand => {
+            const linkedCommand = slashCommands.find(botCommand => {
                 return botCommand.commandName === sentCommand;
             });
 
@@ -80,12 +77,11 @@ module.exports = {
                     },
                 });
             }
-
         })
 
         client.on('message', msg => {
             if (msg.author.id != client.user.id) {
-                publicMsgCommands.forEach((module) => {
+                msgFunctions.forEach((module) => {
                     module.func(msg, extraGuildInfo[msg.guild.id].memberCount);
                 });
             }

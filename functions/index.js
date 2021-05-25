@@ -21,7 +21,7 @@ const extraGuildInfo = [];
 module.exports = {
     init: (client) => {
         client.on('ready', async () => {
-            client.guilds.cache.forEach(guild => {
+            await Promise.all(client.guilds.cache.map(async guild => {
                 console.log(`Bot is online on server ${guild.name}`);
                 try {
                     const members = await guild.members.fetch();
@@ -37,7 +37,7 @@ module.exports = {
                         memberCount: 0,
                     }
                 }
-            })
+            }))
         });
 
         client.ws.on('INTERACTION_CREATE', async (interaction) => {

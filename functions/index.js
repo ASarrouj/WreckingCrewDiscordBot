@@ -16,24 +16,31 @@ const publicMsgCommands = [
 ];
 const editFunctions = [require('./chatFilter')];
 
+const extraGuildInfo = [];
+
 module.exports = {
     init: (client) => {
-        let memberCount, guild;
+        let memberCount;
 
         client.on('ready', async () => {
-            guild = client.guilds.cache.first();
-            console.log(`Bot is online on server ${guild.name}`);
+            client.guilds.cache.forEach(guild => {
+                console.log(`Bot is online on server ${guild.name}`);
+                try {
+                    const members = await guild.members.fetch();
+                    extraGuildInfo[guild.id] = {
+                        memberCount: await members.filter(member => {
+                            return !member.user.bot
+                        }).size
+                    }
+                }
+                catch (error) {
+                    console.log(error);
+                    extraGuildInfo[guild.id] = {
+                        memberCount: 0,
+                    }
+                }
+            })
 
-            try {
-                const members = await guild.members.fetch();
-                memberCount = await members.filter(member => {
-                    return !member.user.bot
-                }).size;
-            }
-            catch (error) {
-                console.log(error);
-                memberCount = 0;
-            }
         });
 
         client.ws.on('INTERACTION_CREATE', async (interaction) => {
@@ -42,6 +49,8 @@ module.exports = {
             const linkedCommand = botCommands.find(botCommand => {
                 return botCommand.commandName === sentCommand;
             });
+
+            const guild = client.guilds.cache.get(interaction.guild_id)
 
             if (linkedCommand) {
                 await client.api.interactions(interaction.id, interaction.token).callback.post({
@@ -57,7 +66,7 @@ module.exports = {
                     const messageObject = client.guilds.cache.first().channels.cache.get(responseMsg.channel_id).messages.cache.get(responseMsg.id);
                     messageObject.interactionAuthor = responseMsg.interaction.user;
 
-                    linkedCommand.followup(messageObject, memberCount);
+                    linkedCommand.followup(messageObject, extraGuildInfo[interaction.guild_id].memberCount);
                 }
             }
             else {
@@ -77,7 +86,7 @@ module.exports = {
         client.on('message', msg => {
             if (msg.author.id != client.user.id) {
                 publicMsgCommands.forEach((module) => {
-                    module.func(msg, memberCount);
+                    module.func(msg, extraGuildInfo[msg.guild.id].memberCount);
                 });
             }
         })

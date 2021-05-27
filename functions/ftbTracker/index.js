@@ -28,15 +28,16 @@ module.exports = {
             return {
                 embeds: [
                     {
-                        description: Object.entries(ftbDatabase).reduce((accMsg, ftbEntry) => {
+                        title: 'FTB Standings',
+                        description: Object.entries(ftbDatabase).map((ftbEntry) => {
                             try {
                                 let user = guild.members.cache.get(ftbEntry[0]);
-                                return accMsg += `${user.displayName}: ${ftbEntry[1]}\n`;
+                                return `${user.displayName}: ${ftbEntry[1]}`;
                             }
                             catch (e) {
-                                return accMsg;
+                                return '';
                             }
-                        }, "FTB STANDINGS:\n"),
+                        }).join('\n')
                     }
                 ]
             }

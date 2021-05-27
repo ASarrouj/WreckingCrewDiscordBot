@@ -87,7 +87,7 @@ module.exports = {
         });
         const gifOnly = gifOption ? gifOption.value : false;
         const query = gifOnly ? `${origQuery} gif` : origQuery;
-        const author = guild.members.cache.get(payload.member.user.id) || guild.members.cache.get(payload.user.id);
+        const author = guild ? guild.members.cache.get(payload.member.user.id) : undefined;
 
         try {
             const results = await engines[engineIndex].search(query, options);
@@ -108,10 +108,10 @@ module.exports = {
                             image: {
                                 url: firstResult.url
                             },
-                            author: {
+                            author: author ? {
                                 name: author.displayName,
                                 icon_url: author.user.avatarURL(),
-                            },
+                            } : undefined,
                         }
                     ]
                 }

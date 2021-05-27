@@ -4,28 +4,16 @@ path = require('path');
 const filename = path.join(__dirname,'ftbDatabase.ign.json');
 let ftbDatabase = JSON.parse(fs.readFileSync(filename));
 
-const applyFtbPoints = async (id, pointAmount, channel, displayName) => {
-    let user, logMsg = null;
-    if (channel){
-        try {
-            user = channel.guild.members.cache.get(id);
-        } catch (e) {
-            console.error(e)
-        }
+const applyFtbPoints = async (user, pointAmount) => {
+    let logMsg;
+
+    if (Object.keys(ftbDatabase).includes(user.id)) {
+        ftbDatabase[user.id] += parseInt(pointAmount);
+        logMsg = `${user.displayName} now has ${ftbDatabase[user.id]} FTB points (${pointAmount}).`;
     }
     else {
-        user = {
-            displayName,
-        }
-    }
-    console.log(channel)
-    if (Object.keys(ftbDatabase).includes(id)) {
-        ftbDatabase[id] += parseInt(pointAmount);
-        logMsg = `${user.displayName} now has ${ftbDatabase[id]} FTB points.`;
-    }
-    else {
-        ftbDatabase[id] = parseInt(pointAmount);
-        logMsg = `User ${user.displayName} has now been created, starting with ${ftbDatabase[id]} FTB points.`;
+        ftbDatabase[user.id] = parseInt(pointAmount);
+        logMsg = `User ${user.displayName} has now been created, starting with ${ftbDatabase[user.id]} FTB points.`;
     }
     fs.writeFileSync(filename, JSON.stringify(ftbDatabase));
     return logMsg;
@@ -56,6 +44,7 @@ module.exports = {
             const pointAmt = subCommandOption.options.find(option => {
                 return option.name == 'points';
             }).value;
+            const user = guild.members.cache.get(userId);
 
             if (pointAmt < -20 || pointAmt > 20){
                 return {
@@ -70,10 +59,14 @@ module.exports = {
                 };
             }
 
-            const feedbackMessage = await applyFtbPoints(userId, pointAmt, null, guild.members.cache.get(userId).displayName);
+            const feedbackMessage = await applyFtbPoints(user, pointAmt);
 
             return {
-                content: feedbackMessage,
+                embeds: [
+                    {
+                        title: feedbackMessage,
+                    }
+                ]
             };
         }
     },

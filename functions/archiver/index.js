@@ -85,7 +85,7 @@ module.exports = {
                         .setTitle('Meme Approved')
                         .setDescription("A majority of the server has decided this was archive worthy, and thus it will be added to the archives." +
                             " The archiver has also been awarded 5 ftb points for his contribution.");
-                    await applyFtbPoints(author.id, 5, msg.channel);
+                    await applyFtbPoints(author, 5);
                     await archiveChannel.send(archiveContent);
                     await msg.channel.send(pollEmbed);
                 }
@@ -95,7 +95,7 @@ module.exports = {
                         .setTitle('Meme Shot Down')
                         .setDescription("A majority of the server has decided this meme is terrible, and thus the author must pay the price." +
                             " The author has been deducted 5 ftb points for wasting the server's time.");
-                    await applyFtbPoints(author.id, -5, msg.channel);
+                    await applyFtbPoints(author, -5);
                     await msg.channel.send(pollEmbed);
                 }
             });

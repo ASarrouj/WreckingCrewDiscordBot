@@ -5,6 +5,7 @@ const keys = require('../../searchKeys.ign.js');
 
 module.exports = {
     commandName: 'youtube',
+    DM: true,
     run: async (payload) => {
         const query = payload.data.options.find(option => {
             return option.name === 'query';

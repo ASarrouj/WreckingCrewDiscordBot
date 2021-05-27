@@ -1,5 +1,6 @@
 module.exports = {
     commandName: 'coinflip',
+    DM: true,
     run: async () => {
         const rand = Math.random();
 

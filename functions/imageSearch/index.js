@@ -76,6 +76,7 @@ module.exports = {
         })
     },
     commandName: 'showme',
+    DM: true,
     run: async (payload, guild) => {
         let interactionResponse = {};
         const origQuery = payload.data.options.find(option => {
@@ -86,7 +87,7 @@ module.exports = {
         });
         const gifOnly = gifOption ? gifOption.value : false;
         const query = gifOnly ? `${origQuery} gif` : origQuery;
-        const author = guild.members.cache.get(payload.member.user.id);
+        const author = guild.members.cache.get(payload.member.user.id) || guild.members.cache.get(payload.user.id);
 
         try {
             const results = await engines[engineIndex].search(query, options);

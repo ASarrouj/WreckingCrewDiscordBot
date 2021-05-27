@@ -51,21 +51,35 @@ module.exports = {
             const guild = client.guilds.cache.get(interaction.guild_id)
 
             if (linkedCommand) {
-                await client.api.interactions(interaction.id, interaction.token).callback.post({
-                    data: {
-                        type: 4,
-                        data: await linkedCommand.run(interaction, guild),
+                if (!interaction.user || linkedCommand.DM){
+                    await client.api.interactions(interaction.id, interaction.token).callback.post({
+                        data: {
+                            type: 4,
+                            data: await linkedCommand.run(interaction, guild),
+                        }
+                    });
+    
+                    if (linkedCommand.followup) {
+                        const appId = (await client.fetchApplication()).id;
+                        const responseMsg = (await axios.get(`https://discord.com/api/v8/webhooks/${appId}/${interaction.token}/messages/@original`)).data;
+                        const messageObject = client.guilds.cache.first().channels.cache.get(responseMsg.channel_id).messages.cache.get(responseMsg.id);
+                        messageObject.interactionAuthor = responseMsg.interaction.user;
+    
+                        linkedCommand.followup(messageObject, extraGuildInfo[interaction.guild_id].memberCount);
                     }
-                });
-
-                if (linkedCommand.followup) {
-                    const appId = (await client.fetchApplication()).id;
-                    const responseMsg = (await axios.get(`https://discord.com/api/v8/webhooks/${appId}/${interaction.token}/messages/@original`)).data;
-                    const messageObject = client.guilds.cache.first().channels.cache.get(responseMsg.channel_id).messages.cache.get(responseMsg.id);
-                    messageObject.interactionAuthor = responseMsg.interaction.user;
-
-                    linkedCommand.followup(messageObject, extraGuildInfo[interaction.guild_id].memberCount);
                 }
+                else {
+                    await client.api.interactions(interaction.id, interaction.token).callback.post({
+                        data: {
+                            type: 4,
+                            data: {
+                                content: 'This command can only be used in server channels.',
+                                flags: 64,
+                            },
+                        },
+                    });
+                }
+
             }
             else {
                 await client.api.interactions(interaction.id, interaction.token).callback.post({

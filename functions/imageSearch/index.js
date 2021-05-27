@@ -62,7 +62,7 @@ module.exports = {
                                 msg.channel.send('Sorry, something went wrong with that search. Amir will look into it');
                         }
 
-                        console.log(e.message);
+                        console.error(e.message);
                     }
                     engineIndex++;
                     if (engineIndex == engines.length) {
@@ -136,7 +136,7 @@ module.exports = {
                     }
             }
 
-            console.log(e.message);
+            console.error(e.message);
         }
         engineIndex++;
         if (engineIndex == engines.length) {

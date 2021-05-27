@@ -26,15 +26,19 @@ module.exports = {
 
         if (subCommandOption.name === 'list'){
             return {
-                content: Object.entries(ftbDatabase).reduce((accMsg, ftbEntry) => {
-                    try {
-                        let user = guild.members.cache.get(ftbEntry[0]);
-                        return accMsg += `${user.displayName}: ${ftbEntry[1]}\n`;
+                embeds: [
+                    {
+                        description: Object.entries(ftbDatabase).reduce((accMsg, ftbEntry) => {
+                            try {
+                                let user = guild.members.cache.get(ftbEntry[0]);
+                                return accMsg += `${user.displayName}: ${ftbEntry[1]}\n`;
+                            }
+                            catch (e) {
+                                return accMsg;
+                            }
+                        }, "FTB STANDINGS:\n"),
                     }
-                    catch (e) {
-                        return accMsg;
-                    }
-                }, "FTB STANDINGS:\n"),
+                ]
             }
         }
         else if (subCommandOption.name === 'edit'){

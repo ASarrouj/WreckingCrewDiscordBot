@@ -92,7 +92,7 @@ module.exports = {
                 else if (noCount > memberCount / 2) {
                     var pollEmbed = new MessageEmbed();
                     pollEmbed.setURL(msg.url)
-                        .setTitle('Meme Approved')
+                        .setTitle('Meme Shot Down')
                         .setDescription("A majority of the server has decided this meme is terrible, and thus the author must pay the price." +
                             " The author has been deducted 5 ftb points for wasting the server's time.");
                     await applyFtbPoints(author.id, -5, msg.channel);

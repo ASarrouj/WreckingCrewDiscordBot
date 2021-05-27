@@ -6,7 +6,8 @@ const slashCommands = [
     require('./ftbTracker'),
     require('./imageSearch'),
     require('./polls'),
-    require('./youtube')
+    require('./youtube'),
+    require('./coinFlip')
 ]
 
 const msgFunctions = [
@@ -71,9 +72,9 @@ module.exports = {
                     data: {
                         type: 4,
                         data: {
-                            content: 'The logic for this command has not yet been implemented.'
+                            content: 'The logic for this command has not yet been implemented.',
+                            flags: 64,
                         },
-                        flags: 64,
                     },
                 });
             }

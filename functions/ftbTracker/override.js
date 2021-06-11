@@ -3,10 +3,10 @@ let resetFtbPoints = require('./action').resetFtbPoints;
 module.exports = {
     commandName: 'ftbreset',
     run: async (payload, guild) => {
-        const userId = subCommandOption.options.find(option => {
+        const userId = payload.data.options.find(option => {
             return option.name == 'user';
         }).value;
-        const pointAmt = subCommandOption.options.find(option => {
+        const pointAmt = payload.data.options.find(option => {
             return option.name == 'points';
         }).value;
         const user = guild.members.cache.get(userId);

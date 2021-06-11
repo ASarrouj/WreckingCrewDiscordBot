@@ -14,5 +14,6 @@
             "type": 4,
             "required": true
         }
-    ]
+    ],
+    "default_permission": false
 }

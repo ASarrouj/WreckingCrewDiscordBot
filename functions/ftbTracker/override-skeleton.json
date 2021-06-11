@@ -1,5 +1,5 @@
 {
-    "name": "ftbOverride",
+    "name": "ftbreset",
     "description": "Admin command to reset ftb point values when necessary",
     "options": [
         {

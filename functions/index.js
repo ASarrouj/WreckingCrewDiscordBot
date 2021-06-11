@@ -3,7 +3,7 @@ const axios = require('axios');
 
 const slashCommands = [
     ...require('./chatting'),
-    require('./ftbTracker'),
+    ...require('./ftbTracker'),
     require('./imageSearch'),
     require('./polls'),
     require('./youtube'),

@@ -1,0 +1,18 @@
+{
+    "name": "ftbOverride",
+    "description": "Admin command to reset ftb point values when necessary",
+    "options": [
+        {
+            "name": "user",
+            "description": "The user to edit",
+            "type": 6,
+            "required": true
+        },
+        {
+            "name": "points",
+            "description": "The amount of points to add or subtract",
+            "type": 4,
+            "required": true
+        }
+    ]
+}

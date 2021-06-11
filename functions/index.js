@@ -11,7 +11,6 @@ const slashCommands = [
 ]
 
 const msgFunctions = [
-    require('./imageSearch'),
     require('./chatFilter'),
     require('./archiver')
 ];

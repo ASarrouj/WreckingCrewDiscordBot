@@ -1,7 +1,7 @@
 let resetFtbPoints = require('./action').resetFtbPoints;
 
 module.exports = {
-    commandName: 'ftbOverride',
+    commandName: 'ftbreset',
     run: async (payload, guild) => {
         const userId = subCommandOption.options.find(option => {
             return option.name == 'user';

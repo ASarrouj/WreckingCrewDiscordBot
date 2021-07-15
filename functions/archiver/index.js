@@ -1,4 +1,4 @@
-const { applyFtbPoints } = require('../ftbTracker');
+const { applyFtbPoints } = require('../ftbTracker/action');
 const { wait } = require('../../helpers/constants');
 const { MessageEmbed } = require('discord.js');
 

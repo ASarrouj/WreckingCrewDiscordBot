@@ -1,3 +1,3 @@
 module.exports = {
-  constants: require('./constants.js'),
+	constants: require('./constants.js'),
 };

@@ -2,7 +2,7 @@ const keys = require('../../searchKeys.ign.js');
 const imageSearch = require('image-search-google');
 const engines = keys.map((key) => { return new imageSearch(key.cx, key.apiKey); });
 const options = { safe: 'active' };
-var engineIndex = 0;
+let engineIndex = 0;
 
 module.exports = {
 	commandName: 'showme',

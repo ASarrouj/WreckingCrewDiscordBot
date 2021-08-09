@@ -1,16 +1,16 @@
 module.exports = {
-    commandName: 'coinflip',
-    DM: true,
-    run: async () => {
-        const rand = Math.random();
+	commandName: 'coinflip',
+	DM: true,
+	run: async () => {
+		const rand = Math.random();
 
-        if (rand < 0.5){
-            return {
-                content: 'https://i.imgur.com/wMRCVkZ.png',
-            }
-        }
-        return {
-            content: 'https://i.imgur.com/B2vStF9.png'
-        }
-    }
-}
+		if (rand < 0.5){
+			return {
+				content: 'https://i.imgur.com/wMRCVkZ.png',
+			};
+		}
+		return {
+			content: 'https://i.imgur.com/B2vStF9.png'
+		};
+	}
+};

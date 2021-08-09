@@ -1,4 +1,4 @@
 module.exports = [
-    require('./action'),
-    require('./override'),
-]
+	require('./action'),
+	require('./override'),
+];

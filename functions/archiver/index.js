@@ -20,7 +20,6 @@ const XEmoji = {
 module.exports = {
 	func: async (msg, memberCount) => {
 		if (msg.channel.topic && msg.channel.topic.includes('#archivable')) {
-
 			let archiveContent;
 
 			if (!msg.embeds[0])

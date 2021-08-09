@@ -63,7 +63,7 @@ module.exports = {
 			}).value;
 			const user = guild.members.cache.get(userId);
 
-			if (userId === payload.member.user.id){
+			if (userId === payload.member.user.id) {
 				return {
 					content: 'You cannot change your own FTB score.',
 					flags: 64, // Means only sender can see this

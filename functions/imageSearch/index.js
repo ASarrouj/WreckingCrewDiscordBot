@@ -24,9 +24,8 @@ module.exports = {
 				if (gifOnly) {
 					return /^https:.*\.gif$/.test(result.url);
 				}
-				else {
-					return /^https:.*\.(jpg|jpeg|png|svg|pdf|gif|tiff|img)$/.test(result.url);
-				}
+
+				return /^https:.*\.(jpg|jpeg|png|svg|pdf|gif|tiff|img)$/.test(result.url);
 			});
 
 			if (firstResult) {
@@ -46,7 +45,6 @@ module.exports = {
 					content: `Sorry, no image could be found with the search query \`${query}\`.`,
 				};
 			}
-
 		}
 		catch (e) {
 			switch (e.message) {
@@ -69,6 +67,5 @@ module.exports = {
 		}
 
 		return interactionResponse;
-
 	}
 };

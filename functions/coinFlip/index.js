@@ -4,7 +4,7 @@ module.exports = {
 	run: async () => {
 		const rand = Math.random();
 
-		if (rand < 0.5){
+		if (rand < 0.5) {
 			return {
 				content: 'https://i.imgur.com/wMRCVkZ.png',
 			};

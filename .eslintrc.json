@@ -23,6 +23,28 @@
         ],
         "no-misleading-character-class": "off",
         "no-unused-vars": "warn",
-        "no-var": "error"
+        "no-var": "error",
+		"no-extra-parens": "warn",
+		"no-else-return": "warn",
+		"array-bracket-spacing": ["warn", "never"],
+		"no-multiple-empty-lines": "warn",
+		"no-trailing-spaces": "warn",
+		"padded-blocks": ["error", "never"],
+		"space-before-blocks": ["error", "always"],
+		"space-before-function-paren": ["error", {
+			"anonymous": "never",
+			"named": "never",
+			"asyncArrow": "always"
+		}],
+		"space-unary-ops": [
+			2, {
+			  "words": true,
+			  "nonwords": false,
+			  "overrides": {
+				"new": true,
+				"++": false
+			  }
+		}],
+		"sort-imports": "error"
     }
 }

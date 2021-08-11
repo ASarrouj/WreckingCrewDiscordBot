@@ -1,10 +1,14 @@
-const Discord = require('discord.js');
+const {Client, Intents} = require('discord.js');
 const functions = require('./functions');
 const token = require('./token.ign.js');
 
-let intents = new Discord.Intents(Discord.Intents.ALL);
-intents.remove('GUILD_PRESENCES');
-const client = new Discord.Client({ ws: { intents } });
+let intents = [
+	Intents.FLAGS.GUILD_MEMBERS,
+	Intents.FLAGS.GUILD_MESSAGES,
+	Intents.FLAGS.DIRECT_MESSAGES,
+	Intents.FLAGS.GUILD_MESSAGE_REACTIONS
+];
+const client = new Client({ ws: { intents } });
 
 functions.init(client);
 

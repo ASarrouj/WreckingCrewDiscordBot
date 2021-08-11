@@ -7,14 +7,15 @@ let engineIndex = 0;
 module.exports = {
 	commandName: 'showme',
 	DM: true,
+	/**
+	 *
+	 * @param {import('discord.js').CommandInteraction} payload
+	 * @returns
+	 */
 	run: async (payload) => {
 		let interactionResponse = {};
-		const origQuery = payload.data.options.find(option => {
-			return option.name === 'query';
-		}).value;
-		const gifOption = payload.data.options.find(option => {
-			return option.name === 'gif';
-		});
+		const origQuery = payload.options.get('query').value;
+		const gifOption = payload.options.get('gif');
 		const gifOnly = gifOption ? gifOption.value : false;
 		const query = gifOnly ? `${origQuery} gif` : origQuery;
 

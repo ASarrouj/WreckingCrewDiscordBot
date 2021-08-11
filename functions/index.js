@@ -18,6 +18,10 @@ const editFunctions = [require('./chatFilter')];
 const extraGuildInfo = [];
 
 module.exports = {
+	/**
+	 *
+	 * @param {import('discord.js').Client} client
+	 */
 	init: (client) => {
 		client.on('ready', async () => {
 			await Promise.all(client.guilds.cache.map(async guild => {
@@ -39,59 +43,44 @@ module.exports = {
 			}));
 		});
 
-		client.ws.on('INTERACTION_CREATE', async (interaction) => {
-			const sentCommand = interaction.data.name.toLowerCase();
+		client.on('interactionCreate', async (interaction) => {
+			const sentCommand = interaction.commandName.toLowerCase();
 
 			const linkedCommand = slashCommands.find(botCommand => {
 				return botCommand.commandName === sentCommand;
 			});
 
-			const guild = client.guilds.cache.get(interaction.guild_id);
+			const guild = client.guilds.cache.get(interaction.guildId);
 
 			if (linkedCommand) {
 				if (!interaction.user || linkedCommand.DM) {
-					await client.api.interactions(interaction.id, interaction.token).callback.post({
-						data: {
-							type: 4,
-							data: await linkedCommand.run(interaction, guild),
-						}
-					});
+					await interaction.reply(await linkedCommand.run(interaction, guild));
 
-					if (linkedCommand.followup) {
-						const appId = (await client.fetchApplication()).id;
-						const responseMsg = (await axios.get(`https://discord.com/api/v8/webhooks/${appId}/${interaction.token}/messages/@original`)).data;
-						const messageObject = client.guilds.cache.first().channels.cache.get(responseMsg.channel_id).messages.cache.get(responseMsg.id);
-						messageObject.interactionAuthor = responseMsg.interaction.user;
+					// if (linkedCommand.followup) {
+					// 	const appId = (await client.application).id;
+					// 	const responseMsg = (await axios.get(`https://discord.com/api/v8/webhooks/${appId}/${interaction.token}/messages/@original`)).data;
+					// 	const messageObject = client.guilds.cache.first().channels.cache.get(responseMsg.channel_id).messages.cache.get(responseMsg.id);
+					// 	messageObject.interactionAuthor = responseMsg.interaction.user;
 
-						linkedCommand.followup(messageObject, extraGuildInfo[interaction.guild_id].memberCount);
-					}
+					// 	linkedCommand.followup(messageObject, extraGuildInfo[interaction.guild_id].memberCount);
+					// }
 				}
 				else {
-					await client.api.interactions(interaction.id, interaction.token).callback.post({
-						data: {
-							type: 4,
-							data: {
-								content: 'This command can only be used in server channels.',
-								flags: 64,
-							},
-						},
+					await interaction.reply({
+						content: 'This command can only be used in server channels.',
+						ephemeral: true,
 					});
 				}
 			}
 			else {
-				await client.api.interactions(interaction.id, interaction.token).callback.post({
-					data: {
-						type: 4,
-						data: {
-							content: 'The logic for this command has not yet been implemented.',
-							flags: 64,
-						},
-					},
+				await interaction.reply({
+					content: 'The logic for this command has not yet been implemented.',
+					ephemeral: true,
 				});
 			}
 		});
 
-		client.on('message', msg => {
+		client.on('messageCreate', msg => {
 			if (msg.author.id != client.user.id) {
 				msgFunctions.forEach((module) => {
 					module.func(msg, extraGuildInfo[msg.guild.id].memberCount);

@@ -21,6 +21,10 @@ const badWordRegexes = [
 
 module.exports = {
 	commands,
+	/**
+	 *
+	 * @param {import('discord.js').Message} msg
+	 */
 	func: async (msg) => {
 		badWordRegexes.forEach(regex => {
 			if (regex.test(msg.content)) {

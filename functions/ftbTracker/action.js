@@ -36,8 +36,14 @@ const resetFtbPoints = async (user, pointAmount) => {
 
 module.exports = {
 	commandName: 'ftb',
+	/**
+	 *
+	 * @param {import('discord.js').CommandInteraction} payload
+	 * @param {import('discord.js').Guild} guild
+	 * @returns
+	 */
 	run: async (payload, guild) => {
-		const subCommandOption = payload.data.options[0];
+		const subCommandOption = payload.options[0];
 
 		if (subCommandOption.name === 'list') {
 			return {

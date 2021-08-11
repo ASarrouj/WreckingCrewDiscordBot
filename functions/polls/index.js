@@ -42,19 +42,20 @@ const XEmoji = {
 
 module.exports = {
 	commandName: 'poll',
+	/**
+	 *
+	 * @param {import('discord.js').CommandInteraction} payload
+	 * @returns
+	 */
 	run: async (payload, guild) => {
-		let question = payload.data.options.find(option => {
-			return option.name === 'question';
-		}).value;
-		const choices = payload.data.options.filter(option => {
+		let question = payload.options.get('question').value;
+		const choices = payload.options.data.filter(option => {
 			return option.name.includes('choice');
 		}).map(option => {
 			return option.value;
 		});
 
-		const timeOption = payload.data.options.find(option => {
-			return option.name === 'time';
-		});
+		const timeOption = payload.options.get('time');
 		let pollHours = timeOption ? timeOption.value : 1;
 
 		const author = guild.members.cache.get(payload.member.user.id);
@@ -150,7 +151,7 @@ module.exports = {
 				field.name += `   ${field.count} ${field.count == 1 ? 'vote' : 'votes'}`;
 				return field;
 			});
-			await messageObject.channel.send(pollEmbed);
+			await messageObject.channel.send({embeds: [pollEmbed]});
 		});
 	}
 };

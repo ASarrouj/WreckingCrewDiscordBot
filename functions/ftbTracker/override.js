@@ -6,7 +6,7 @@ module.exports = {
 	 *
 	 * @param {import('discord.js').CommandInteraction} payload
 	 * @param {import('discord.js').Guild} guild
-	 * @returns
+	 * @returns {import('discord.js').InteractionReplyOptions}
 	 */
 	run: async (payload, guild) => {
 		const userId = payload.options.get('user').value;

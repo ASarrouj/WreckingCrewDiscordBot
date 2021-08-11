@@ -40,10 +40,10 @@ module.exports = {
 	 *
 	 * @param {import('discord.js').CommandInteraction} payload
 	 * @param {import('discord.js').Guild} guild
-	 * @returns
+	 * @returns {import('discord.js').InteractionReplyOptions}
 	 */
 	run: async (payload, guild) => {
-		const subCommandOption = payload.options[0];
+		const subCommandOption = payload.options.data[0];
 
 		if (subCommandOption.name === 'list') {
 			return {
@@ -72,20 +72,20 @@ module.exports = {
 			if (userId === payload.member.user.id) {
 				return {
 					content: 'You cannot change your own FTB score.',
-					flags: 64, // Means only sender can see this
+					ephemeral: true
 				};
 			}
 
 			if (pointAmt < -20 || pointAmt > 20) {
 				return {
 					content: 'Point values must be between -20 and +20.',
-					flags: 64, // Means only sender can see this
+					ephemeral: true
 				};
 			}
 			if (pointAmt === 0) {
 				return {
 					content: 'Point value cannot be 0.',
-					flags: 64, // Means only sender can see this
+					ephemeral: true
 				};
 			}
 

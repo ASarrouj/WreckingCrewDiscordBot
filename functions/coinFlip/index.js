@@ -1,6 +1,10 @@
 module.exports = {
 	commandName: 'coinflip',
 	DM: true,
+	/**
+	 *
+	 @returns {import('discord.js').InteractionReplyOptions}
+	 */
 	run: async () => {
 		const rand = Math.random();
 

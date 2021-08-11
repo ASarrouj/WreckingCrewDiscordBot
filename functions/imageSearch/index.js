@@ -10,7 +10,7 @@ module.exports = {
 	/**
 	 *
 	 * @param {import('discord.js').CommandInteraction} payload
-	 * @returns
+	 * @returns {import('discord.js').InteractionReplyOptions}
 	 */
 	run: async (payload) => {
 		let interactionResponse = {};

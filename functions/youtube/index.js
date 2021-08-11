@@ -6,6 +6,11 @@ const keys = require('../../searchKeys.ign.js');
 module.exports = {
 	commandName: 'youtube',
 	DM: true,
+	/**
+	 *
+	 * @param {import('discord.js').CommandInteraction} payload
+	 * @returns {import('discord.js').InteractionReplyOptions}
+	 */
 	run: async (payload) => {
 		const query = payload.data.options.find(option => {
 			return option.name === 'query';

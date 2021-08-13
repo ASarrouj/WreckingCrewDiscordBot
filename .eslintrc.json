@@ -1,15 +1,22 @@
 {
+	"root": true,
     "env": {
-        "commonjs": true,
         "es2021": true,
         "node": true
     },
-    "extends": "eslint:recommended",
+    "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended"
+    ],
+    "parser": "@typescript-eslint/parser",
     "parserOptions": {
         "ecmaVersion": 12
     },
+    "plugins": [
+        "@typescript-eslint"
+    ],
     "rules": {
-        "indent": [
+		"indent": [
             "error",
             "tab"
         ],
@@ -45,6 +52,9 @@
 				"++": false
 			  }
 		}],
-		"sort-imports": "error"
+		"object-curly-spacing": ["error", "always"],
+		"no-empty-function": "off",
+		"@typescript-eslint/no-empty-function": "off",
+		"@typescript-eslint/no-non-null-assertion": "off",
     }
 }

@@ -1,5 +1,5 @@
-import { Message, PartialMessage } from "discord.js";
-import { MsgCommand } from "../types";
+import { Message } from 'discord.js';
+import { MsgCommand } from '../types';
 
 const charGroups = {
 	n: '[nN\u00D1\u00F1\u0143-\u0149\u019D\u019E\u01F8\u01F9\u0220\u0235\u039D]',
@@ -21,12 +21,12 @@ const badWordRegexes = [
 ];
 
 export class ChatFilter implements MsgCommand {
-	static async respond(msg: Message) {
+	static async respond(msg: Message): Promise<void> {
 		for (const regex of badWordRegexes) {
 			if (regex.test(msg.content)) {
 				await msg.delete();
 				break;
 			}
-		};
+		}
 	}
-};
+}

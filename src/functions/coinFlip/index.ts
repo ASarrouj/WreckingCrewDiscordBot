@@ -1,5 +1,5 @@
-import { InteractionReplyOptions } from "discord.js";
-import { SlashCommand } from "../types";
+import { InteractionReplyOptions } from 'discord.js';
+import { SlashCommand } from '../types';
 
 
 export class CoinFlipCommand implements SlashCommand {
@@ -17,4 +17,4 @@ export class CoinFlipCommand implements SlashCommand {
 			content: 'https://i.imgur.com/B2vStF9.png'
 		};
 	}
-};
+}

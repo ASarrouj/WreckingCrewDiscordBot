@@ -29,9 +29,11 @@
             "always"
         ],
         "no-misleading-character-class": "off",
-        "no-unused-vars": "warn",
+		"no-unused-vars": "off",
+		"@typescript-eslint/no-unused-vars": ["warn", { "args": "none"}],
         "no-var": "error",
-		"no-extra-parens": "warn",
+		"no-extra-parens": "off",
+		"@typescript-eslint/no-extra-parens": ["error"],
 		"no-else-return": "warn",
 		"array-bracket-spacing": ["warn", "never"],
 		"no-multiple-empty-lines": "warn",
@@ -55,6 +57,6 @@
 		"object-curly-spacing": ["error", "always"],
 		"no-empty-function": "off",
 		"@typescript-eslint/no-empty-function": "off",
-		"@typescript-eslint/no-non-null-assertion": "off",
+		"@typescript-eslint/no-non-null-assertion": "off"
     }
 }

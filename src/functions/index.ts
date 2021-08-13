@@ -9,17 +9,18 @@ import { ChatFilter } from './chatFilter';
 import { Archiver } from './archiver';
 import { SlashCommand } from './types';
 
+// eslint-disable-next-line @typescript-eslint/no-extra-parens
 const slashCommands = new Map<string, () => SlashCommand>([
-	[BoxOfSandCommand.commandName, () => {return new BoxOfSandCommand}],
-	[ChasCommand.commandName, () => {return new ChasCommand}],
-	[GoodBotCommand.commandName, () => {return new GoodBotCommand}],
-	[PailOfWaterCommand.commandName, () => {return new PailOfWaterCommand}],
-	[FtbResetCommand.commandName, () => {return new FtbResetCommand}],
-	[FtbShowAndEditCommand.commandName, () => {return new FtbShowAndEditCommand}],
-	[ImageSearchCommand.commandName, () => {return new ImageSearchCommand}],
-	[PollCommand.commandName, () => {return new PollCommand}],
-	[YoutubeCommand.commandName, () => {return new YoutubeCommand}],
-	[CoinFlipCommand.commandName, () => {return new CoinFlipCommand}]
+	[BoxOfSandCommand.commandName, () => {return new BoxOfSandCommand;}],
+	[ChasCommand.commandName, () => {return new ChasCommand;}],
+	[GoodBotCommand.commandName, () => {return new GoodBotCommand;}],
+	[PailOfWaterCommand.commandName, () => {return new PailOfWaterCommand;}],
+	[FtbResetCommand.commandName, () => {return new FtbResetCommand;}],
+	[FtbShowAndEditCommand.commandName, () => {return new FtbShowAndEditCommand;}],
+	[ImageSearchCommand.commandName, () => {return new ImageSearchCommand;}],
+	[PollCommand.commandName, () => {return new PollCommand;}],
+	[YoutubeCommand.commandName, () => {return new YoutubeCommand;}],
+	[CoinFlipCommand.commandName, () => {return new CoinFlipCommand;}]
 ]);
 
 const msgFunctions = [
@@ -30,7 +31,7 @@ const editFunctions = [ChatFilter.respond];
 
 const extraGuildInfo: { [key: string]: { memberCount: number } } = {};
 
-export function init(client: Client) {
+export function init(client: Client): void {
 	client.on('ready', async () => {
 		await Promise.all(client.guilds.cache.map(async guild => {
 			console.log(`Bot is online on server ${guild.name}`);
@@ -99,4 +100,4 @@ export function init(client: Client) {
 			});
 		}
 	});
-};
+}

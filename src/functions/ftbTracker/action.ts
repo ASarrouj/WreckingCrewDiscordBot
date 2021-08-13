@@ -3,8 +3,10 @@ import {
 	Guild,
 	GuildMember,
 	InteractionReplyOptions,
+	Message,
 	MessageActionRow,
-	MessageButton
+	MessageButton,
+	MessageEmbed
 } from 'discord.js';
 import { SlashCommand } from '../types';
 import fs from 'fs';
@@ -45,6 +47,10 @@ export function resetFtbPoints(user: GuildMember, pointAmount: number): string {
 
 export class FtbShowAndEditCommand implements SlashCommand {
 	static commandName = 'ftb';
+	pointAmt = 0;
+	author?: GuildMember;
+	recipient?: GuildMember;
+	reason?: string | null;
 	async respond(payload: CommandInteraction, guild: Guild): Promise<InteractionReplyOptions> {
 		if (payload.options.getSubcommand() === 'list') {
 			return {
@@ -61,25 +67,25 @@ export class FtbShowAndEditCommand implements SlashCommand {
 				]
 			};
 		}
-		const author = guild.members.cache.get(payload.member!.user.id)!;
-		const recipient = guild.members.cache.get(payload.options.getUser('user', true).id)!;
-		const pointAmt = payload.options.getInteger('points', true);
-		const reason = payload.options.getString('reason');
+		this.author = guild.members.cache.get(payload.member!.user.id)!;
+		this.recipient = guild.members.cache.get(payload.options.getUser('user', true).id)!;
+		this.pointAmt = payload.options.getInteger('points', true);
+		this.reason = payload.options.getString('reason');
 
-		if (recipient.id === author.id) {
+		if (this.recipient.id === this.author.id) {
 			return {
 				content: 'You cannot change your own FTB score.',
 				ephemeral: true
 			};
 		}
 
-		if (pointAmt < -20 || pointAmt > 20) {
+		if (this.pointAmt < -20 || this.pointAmt > 20) {
 			return {
 				content: 'Point values must be between -20 and +20.',
 				ephemeral: true
 			};
 		}
-		if (pointAmt === 0) {
+		if (this.pointAmt === 0) {
 			return {
 				content: 'Point value cannot be 0.',
 				ephemeral: true
@@ -97,21 +103,46 @@ export class FtbShowAndEditCommand implements SlashCommand {
 		return {
 			embeds: [
 				{
-					title: `${author.displayName} would like to give ${recipient.displayName} ${pointAmt} FTB points`,
-					description: `${reason ? `Reason: ${reason}\n` : ''}If you believe this is warranted, please approve the transaction below`
+					title: `${this.author.displayName} would like to give ${this.recipient.displayName} ${this.pointAmt} FTB points`,
+					description: `${this.reason ? `Reason: ${this.reason}\n` : ''}If you believe this is warranted, please approve the transaction below`,
+					footer: { text: 'Time: 1 hour' }
 				}
 			],
 			components: [row]
 		};
+	}
+	async followup(responseMsg: Message): Promise<void> {
+		const blocked = [this.recipient!.id, this.author!.id];
+		const collector = responseMsg.createMessageComponentCollector({ componentType: 'BUTTON', time: 60 * 60 * 1000 });
 
-		const feedbackMessage = await applyFtbPoints(recipient, pointAmt);
+		collector.on('collect', async interaction => {
+			if (blocked.includes(interaction.user.id)) {
+				await interaction.user.send('A third party must approve this transaction');
+				return;
+			}
+			collector.stop();
+		});
 
-		return {
-			embeds: [
-				{
-					title: feedbackMessage,
-				}
-			]
-		};
+		collector.on('end', async collected => {
+			const lastButtonPress = collected.last();
+			if (lastButtonPress && !blocked.includes(lastButtonPress.user.id)) {
+				const newEmbed = new MessageEmbed({
+					title: applyFtbPoints(this.recipient!, this.pointAmt),
+					description: `${this.author!.displayName}'s reason: ${this.reason ? this.reason : 'Not specified'}`,
+					footer: { text: `Approved by ${(lastButtonPress.member as GuildMember).displayName}` }
+				});
+				await responseMsg.edit({
+					embeds: [newEmbed]
+				});
+				return;
+			}
+
+			await responseMsg.edit({
+				embeds: [{
+					title: `${this.author!.displayName}'s transaction of ${this.pointAmt} to ${this.recipient!.displayName} was not approved and will not go through`,
+					description: `Original Reason: ${this.reason ? this.reason : 'Not specified'}`
+				}]
+			});
+		});
 	}
 }

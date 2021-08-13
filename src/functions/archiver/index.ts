@@ -19,7 +19,7 @@ const XEmoji = {
 
 export class Archiver {
 	static async archive(msg: Message, memberCount: number): Promise<void> {
-		const channel = msg.channel as TextChannel
+		const channel = msg.channel as TextChannel;
 		if (channel.topic && channel.topic.includes('#archivable')) {
 			let archiveContent: string;
 
@@ -57,7 +57,7 @@ export class Archiver {
                     reaction.emoji.name == XEmoji.emoji) &&
                     !user.bot;
 			};
-			const collector = msg.createReactionCollector({filter, maxUsers: memberCount, time: 86400000 });
+			const collector = msg.createReactionCollector({ filter, maxUsers: memberCount, time: 86400000 });
 
 			collector.on('collect', (reaction, user) => {
 				if (user.id == author.id && reaction.emoji.name == XEmoji.emoji) {
@@ -80,21 +80,21 @@ export class Archiver {
 
 			collector.on('end', async () => {
 				if (yesCount > memberCount / 2) {
-					let pollEmbed = new MessageEmbed();
+					const pollEmbed = new MessageEmbed();
 					pollEmbed.setTitle('Meme Approved')
 						.setDescription('A majority of the server has decided this was archive worthy, and thus it will be added to the archives.' +
                             ' The archiver has also been awarded 5 ftb points for his contribution.');
 					await applyFtbPoints(author, 5);
-					await (archiveChannel as TextChannel).send({files: [archiveContent]});
-					await msg.reply({embeds: [pollEmbed], allowedMentions: { repliedUser: false }});
+					await (archiveChannel as TextChannel).send({ files: [archiveContent] });
+					await msg.reply({ embeds: [pollEmbed], allowedMentions: { repliedUser: false } });
 				}
 				else if (noCount > memberCount / 2) {
-					let pollEmbed = new MessageEmbed();
+					const pollEmbed = new MessageEmbed();
 					pollEmbed.setTitle('Meme Shot Down')
 						.setDescription('A majority of the server has decided this meme is terrible, and thus the author must pay the price.' +
                             ' The author has been deducted 5 ftb points for wasting the server\'s time.');
 					await applyFtbPoints(author, -5);
-					await msg.reply({embeds: [pollEmbed], allowedMentions: { repliedUser: false }});
+					await msg.reply({ embeds: [pollEmbed], allowedMentions: { repliedUser: false } });
 				}
 			});
 		}

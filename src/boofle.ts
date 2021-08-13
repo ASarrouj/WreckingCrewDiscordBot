@@ -1,8 +1,8 @@
-import { Client, Intents } from 'discord.js'
+import { Client, Intents } from 'discord.js';
 import { init } from './functions';
 import { loginToken } from './secureConstants.ign';
 
-let intents = [
+const intents = [
 	Intents.FLAGS.GUILD_MEMBERS,
 	Intents.FLAGS.GUILD_MESSAGES,
 	Intents.FLAGS.DIRECT_MESSAGES,

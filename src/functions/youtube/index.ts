@@ -1,8 +1,8 @@
-import { CommandInteraction, InteractionReplyOptions, Message } from 'discord.js';
+import { CommandInteraction, InteractionReplyOptions } from 'discord.js';
 import { google } from 'googleapis';
 import { googleApiCreds } from '../../secureConstants.ign';
-import { SlashCommand } from '../types'
-let youtube = google.youtube('v3');
+import { SlashCommand } from '../types';
+const youtube = google.youtube('v3');
 let engineIndex = 0;
 
 export class YoutubeCommand implements SlashCommand {
@@ -29,7 +29,4 @@ export class YoutubeCommand implements SlashCommand {
 			content: `**${query} https://www.youtube.com/watch?v=${videoId}**`,
 		};
 	}
-	async followup(responseMsg: Message) {
-		console.log(responseMsg.embeds);
-	}
-};
+}

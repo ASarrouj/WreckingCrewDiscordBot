@@ -20,7 +20,7 @@ export class ImageSearchCommand implements SlashCommand {
 				safe: 'active',
 				searchType: 'image',
 			})).data.items || [];
-			const firstResult = results.find(result => {
+			const firstResult = results.find((result) => {
 				if (gifOnly) {
 					return /^https:.*\.gif$/.test(result.link!);
 				}
@@ -68,4 +68,4 @@ export class ImageSearchCommand implements SlashCommand {
 
 		return interactionResponse;
 	}
-};
+}

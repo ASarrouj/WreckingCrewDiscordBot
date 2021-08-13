@@ -1,4 +1,4 @@
-import { 
+import {
 	CommandInteraction,
 	Guild,
 	InteractionReplyOptions,
@@ -77,7 +77,7 @@ export class PollCommand implements SlashCommand {
 		}
 
 		this.pollVotes = this.choices.reduce((acc, cur, index) => {
-			acc[numberEmojis[index].emoji] = []
+			acc[numberEmojis[index].emoji] = [];
 			return acc;
 		}, {} as { [key: string]: string[] });
 
@@ -91,9 +91,9 @@ export class PollCommand implements SlashCommand {
 			footer: {
 				text: `Poll Duration: ${this.pollHours} ${this.pollHours == 1 ? 'hour' : 'hours'}`,
 			}
-		}
+		};
 
-		let rows: MessageActionRow[] = [];
+		const rows: MessageActionRow[] = [];
 		let curRow;
 		for (let i = 0; i < this.choices.length; i++) {
 			if (i % 5 == 0) {
@@ -107,12 +107,12 @@ export class PollCommand implements SlashCommand {
 			}));
 		}
 
-		if (this.choices.length % 5 === 0){
+		if (this.choices.length % 5 === 0) {
 			curRow = new MessageActionRow();
 			rows.push(curRow);
 		}
 		curRow?.addComponents(new MessageButton({
-			customId: 'poll-button',
+			customId: `${PollCommand.commandName}-button`,
 			style: 'DANGER',
 			emoji: XEmoji.emoji,
 		}));
@@ -125,7 +125,7 @@ export class PollCommand implements SlashCommand {
 		};
 	}
 
-	async followup(responseMsg: Message) {
+	async followup(responseMsg: Message): Promise<void> {
 		const pollDuration = this.pollHours * 60 * 60 * 1000;
 
 		const collector = responseMsg.createMessageComponentCollector({ componentType: 'BUTTON', time: pollDuration });
@@ -142,12 +142,12 @@ export class PollCommand implements SlashCommand {
 
 				this.pollVotes[(interaction.component as MessageButton).emoji!.name!].push(interaction.user.id);
 
-				const clonedEmbeds = this.updateResponseEmbed(lodash.cloneDeep(interaction.message.embeds[0]) as MessageEmbed, interaction.guild!)
+				const clonedEmbeds = this.updateResponseEmbed(lodash.cloneDeep(interaction.message.embeds[0]) as MessageEmbed, interaction.guild!);
 
 				await interaction.update({
 					embeds: [clonedEmbeds],
 					components: interaction.message.components as MessageActionRow[]
-				})
+				});
 				return;
 			}
 			if (interaction.user.id == responseMsg.interaction!.user.id) {
@@ -174,7 +174,7 @@ export class PollCommand implements SlashCommand {
 
 	private updateResponseEmbed(embed: MessageEmbedOptions | MessageEmbed, guild: Guild): MessageEmbedOptions | MessageEmbed {
 		embed.fields = (() => {
-			let fields = [];
+			const fields = [];
 			for (let i = 0; i < this.choices.length; i++) {
 				const numVotes = this.pollVotes[numberEmojis[i].emoji].length;
 				if (i % 3 == 2) {
@@ -193,7 +193,7 @@ export class PollCommand implements SlashCommand {
 				});
 			}
 			return fields;
-		})()
+		})();
 		return embed;
 	}
-};
+}

@@ -1,7 +1,7 @@
 import { CommandInteraction, Guild, InteractionReplyOptions, Message } from 'discord.js';
 
 export class SlashCommand {
-	constructor(param: any) {};
+	constructor() {}
 	DM?: boolean;
 	async respond(payload: CommandInteraction, guild: Guild): Promise<InteractionReplyOptions> {
 		return {};

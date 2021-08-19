@@ -84,9 +84,6 @@ export function init(client: Client): void {
 				});
 			}
 		}
-		else {
-			await (interaction as ButtonInteraction).deferUpdate();
-		}
 	});
 
 	client.on('messageCreate', msg => {

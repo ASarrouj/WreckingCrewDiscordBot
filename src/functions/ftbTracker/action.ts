@@ -1,4 +1,5 @@
 import {
+	ButtonInteraction,
 	CommandInteraction,
 	Guild,
 	GuildMember,
@@ -12,7 +13,7 @@ import { SlashCommand } from '../types';
 import fs from 'fs';
 import path from 'path';
 
-const filename = path.join(__dirname, 'ftbDatabase.ign.json');
+const filename = path.join(__dirname, '..', '..', '..', 'ftbDatabase.ign.json');
 const ftbDatabase = JSON.parse(fs.readFileSync(filename, 'utf-8'));
 
 export function applyFtbPoints(user: GuildMember, pointAmount: number): string {
@@ -121,6 +122,7 @@ export class FtbShowAndEditCommand implements SlashCommand {
 		const collector = responseMsg.createMessageComponentCollector({ componentType: 'BUTTON', time: 60 * 60 * 1000 });
 
 		collector.on('collect', async interaction => {
+			await interaction.deferUpdate();
 			if (blocked.includes(interaction.user.id)) {
 				await interaction.user.send('A third party must approve this transaction');
 				return;

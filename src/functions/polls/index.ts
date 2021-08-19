@@ -136,7 +136,7 @@ export class PollCommand implements SlashCommand {
 					const optionVoters = this.pollVotes[key];
 					if (optionVoters.includes(interaction.user.id)) {
 						const index = optionVoters.indexOf(interaction.user.id);
-						this.pollVotes[key] = optionVoters.splice(index, 1);
+						optionVoters.splice(index, 1);
 					}
 				}
 
@@ -151,6 +151,7 @@ export class PollCommand implements SlashCommand {
 				return;
 			}
 			if (interaction.user.id == responseMsg.interaction!.user.id) {
+				await interaction.deferUpdate();
 				collector.stop();
 			}
 		});
@@ -166,7 +167,7 @@ export class PollCommand implements SlashCommand {
 			else {
 				embedClone[0].description = 'The poll time has expired. Here are the results of the poll.';
 			}
-			await collected.first()!.update({
+			await lastButtonPress.editReply({
 				embeds: embedClone,
 			});
 		});
@@ -184,7 +185,7 @@ export class PollCommand implements SlashCommand {
 					});
 				}
 				fields.push({
-					name: `${numberEmojis[i].text} ${numVotes} ${numVotes === 1 ? 'vote' : 'votes'}` +
+					name: `${numberEmojis[i].text}  ${numVotes} ${numVotes === 1 ? 'vote' : 'votes'}` +
 						`${numVotes === 0 ? '' : ` (${this.pollVotes[numberEmojis[i].emoji].map(id => {
 							return guild.members.cache.get(id)!.displayName;
 						}).join(',')})`}`,

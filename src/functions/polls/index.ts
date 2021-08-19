@@ -167,7 +167,7 @@ export class PollCommand implements SlashCommand {
 			else {
 				embedClone[0].description = 'The poll time has expired. Here are the results of the poll.';
 			}
-			await lastButtonPress.editReply({
+			await lastButtonPress.editReply({ // test comment
 				embeds: embedClone,
 			});
 		});

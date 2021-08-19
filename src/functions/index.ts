@@ -1,5 +1,5 @@
 import { BoxOfSandCommand, ChasCommand, GoodBotCommand, PailOfWaterCommand } from './chatting';
-import { Client, CommandInteraction, Message } from 'discord.js';
+import { ButtonInteraction, Client, CommandInteraction, Message } from 'discord.js';
 import { FtbResetCommand, FtbShowAndEditCommand } from './ftbTracker';
 import { ImageSearchCommand } from './imageSearch';
 import { PollCommand } from './polls';
@@ -60,12 +60,13 @@ export function init(client: Client): void {
 			const linkedCommand = slashCommands.get(interactionName)!();
 
 			if (linkedCommand) {
-				if (!interaction.user || linkedCommand.DM) {
+				if (interaction.member || linkedCommand.DM) {
 					const guild = client.guilds.cache.get(interaction.guildId!)!;
-					await interaction.reply(await linkedCommand.respond(interaction, guild));
-					const responseMsg = (await interaction.fetchReply()) as Message;
+					const interactionResponse = await linkedCommand.respond(interaction, guild);
+					await interaction.reply(interactionResponse);
 
-					if (linkedCommand.followup) {
+					if (linkedCommand.followup && !interactionResponse.ephemeral) {
+						const responseMsg = (await interaction.fetchReply()) as Message;
 						linkedCommand.followup(responseMsg, extraGuildInfo[interaction.guildId!].memberCount);
 					}
 				}
@@ -82,6 +83,9 @@ export function init(client: Client): void {
 					ephemeral: true,
 				});
 			}
+		}
+		else {
+			await (interaction as ButtonInteraction).deferUpdate();
 		}
 	});
 

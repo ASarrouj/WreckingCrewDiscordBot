@@ -101,7 +101,7 @@ export class PollCommand implements SlashCommand {
 				rows.push(curRow);
 			}
 			curRow?.addComponents(new MessageButton({
-				customId: 'poll-button',
+				customId: `poll-button-${i}`,
 				style: 'PRIMARY',
 				emoji: numberEmojis[i].emoji,
 			}));

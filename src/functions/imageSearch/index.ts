@@ -1,6 +1,6 @@
 import { ImageSearcher } from './ImageSearcher';
-import { googleApiCreds } from '../../secureConstants.ign.js';
-import { SlashCommand } from '../types.js';
+import { googleApiCreds } from '../../secureConstants.ign';
+import { SlashCommand } from '../types';
 import { CommandInteraction, InteractionReplyOptions } from 'discord.js';
 const engines = googleApiCreds.map((key) => { return new ImageSearcher(key.cx, key.apiKey); });
 let engineIndex = 0;

@@ -23,7 +23,13 @@
                     "description": "The amount of points to add or subtract",
                     "type": 4,
                     "required": true
-                }
+                },
+				{
+					"name": "reason",
+                    "description": "The reason for the transaction",
+                    "type": 3,
+                    "required": false
+				}
             ]
         }
     ]

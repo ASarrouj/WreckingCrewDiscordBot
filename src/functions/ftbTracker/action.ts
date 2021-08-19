@@ -51,8 +51,10 @@ export class FtbShowAndEditCommand implements SlashCommand {
 	author?: GuildMember;
 	recipient?: GuildMember;
 	reason?: string | null;
+	subCommand?: string;
 	async respond(payload: CommandInteraction, guild: Guild): Promise<InteractionReplyOptions> {
-		if (payload.options.getSubcommand() === 'list') {
+		this.subCommand = payload.options.getSubcommand();
+		if (this.subCommand === 'list') {
 			return {
 				embeds: [
 					{
@@ -112,6 +114,9 @@ export class FtbShowAndEditCommand implements SlashCommand {
 		};
 	}
 	async followup(responseMsg: Message): Promise<void> {
+		if (this.subCommand === 'list') {
+			return;
+		}
 		const blocked = [this.recipient!.id, this.author!.id];
 		const collector = responseMsg.createMessageComponentCollector({ componentType: 'BUTTON', time: 60 * 60 * 1000 });
 

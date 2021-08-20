@@ -157,18 +157,19 @@ export class PollCommand implements SlashCommand {
 		});
 
 		collector.on('end', async collected => {
-			const lastButtonPress = collected.last()!;
+			const embedClone = lodash.cloneDeep(responseMsg.embeds) as MessageEmbed[];
+			const lastButtonPress = collected.last();
 
-			const embedClone = lodash.cloneDeep(lastButtonPress.message.embeds) as MessageEmbed[];
-
-			if ((lastButtonPress.component as MessageButton).emoji!.name == XEmoji.emoji) {
+			if (lastButtonPress && (lastButtonPress.component as MessageButton).emoji!.name == XEmoji.emoji) {
 				embedClone[0].description = 'The poll was ended early by the author. These are the final results.';
 			}
 			else {
 				embedClone[0].description = 'The poll time has expired. Here are the results of the poll.';
 			}
-			await lastButtonPress.editReply({ // test comment
+
+			await responseMsg.edit({
 				embeds: embedClone,
+				components: [],
 			});
 		});
 	}

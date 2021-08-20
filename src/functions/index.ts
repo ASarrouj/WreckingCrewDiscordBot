@@ -1,5 +1,5 @@
 import { BoxOfSandCommand, ChasCommand, GoodBotCommand, PailOfWaterCommand } from './chatting';
-import { ButtonInteraction, Client, CommandInteraction, Message } from 'discord.js';
+import { Client, CommandInteraction, Message } from 'discord.js';
 import { FtbResetCommand, FtbShowAndEditCommand } from './ftbTracker';
 import { ImageSearchCommand } from './imageSearch';
 import { PollCommand } from './polls';

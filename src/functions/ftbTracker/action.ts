@@ -1,5 +1,4 @@
 import {
-	ButtonInteraction,
 	CommandInteraction,
 	Guild,
 	GuildMember,
@@ -122,11 +121,14 @@ export class FtbShowAndEditCommand implements SlashCommand {
 		const collector = responseMsg.createMessageComponentCollector({ componentType: 'BUTTON', time: 60 * 60 * 1000 });
 
 		collector.on('collect', async interaction => {
-			await interaction.deferUpdate();
 			if (blocked.includes(interaction.user.id)) {
-				await interaction.user.send('A third party must approve this transaction');
+				await interaction.reply({
+					content: 'A third party must approve this transaction',
+					ephemeral: true,
+				});
 				return;
 			}
+			await interaction.deferUpdate();
 			collector.stop();
 		});
 
@@ -139,7 +141,8 @@ export class FtbShowAndEditCommand implements SlashCommand {
 					footer: { text: `Approved by ${(lastButtonPress.member as GuildMember).displayName}` }
 				});
 				await responseMsg.edit({
-					embeds: [newEmbed]
+					embeds: [newEmbed],
+					components: [],
 				});
 				return;
 			}
@@ -148,7 +151,8 @@ export class FtbShowAndEditCommand implements SlashCommand {
 				embeds: [{
 					title: `${this.author!.displayName}'s transaction of ${this.pointAmt} to ${this.recipient!.displayName} was not approved and will not go through`,
 					description: `Original Reason: ${this.reason ? this.reason : 'Not specified'}`
-				}]
+				}],
+				components: [],
 			});
 		});
 	}

@@ -160,7 +160,7 @@ export class PollCommand implements SlashCommand {
 			const embedClone = lodash.cloneDeep(responseMsg.embeds) as MessageEmbed[];
 			const lastButtonPress = collected.last();
 
-			if (lastButtonPress && (lastButtonPress.component as MessageButton).emoji!.name == XEmoji.emoji) {
+			if (lastButtonPress && (lastButtonPress.component as MessageButton).emoji!.name == XEmoji.emoji && lastButtonPress.user.id === responseMsg.interaction!.user.id) {
 				embedClone[0].description = 'The poll was ended early by the author. These are the final results.';
 			}
 			else {
@@ -171,6 +171,8 @@ export class PollCommand implements SlashCommand {
 				embeds: embedClone,
 				components: [],
 			});
+
+			await responseMsg.reply('This poll has concluded');
 		});
 	}
 

@@ -153,7 +153,12 @@ export class PollCommand implements SlashCommand {
 			if (interaction.user.id == responseMsg.interaction!.user.id) {
 				await interaction.deferUpdate();
 				collector.stop();
+				return;
 			}
+			await interaction.reply({
+				content: 'You must be the author of this poll to cancel it',
+				ephemeral: true,
+			});
 		});
 
 		collector.on('end', async collected => {

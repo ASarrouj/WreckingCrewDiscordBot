@@ -46,8 +46,8 @@ const numberEmojis = [
 ];
 
 const XEmoji = {
-	emoji: '❌',
-	text: ':x:'
+	emoji: '✖️',
+	text: ':heavy_multiplication_x:'
 };
 
 export class PollCommand implements SlashCommand {

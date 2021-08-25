@@ -85,7 +85,7 @@ export class Archiver {
 						.setDescription('A majority of the server has decided this was archive worthy, and thus it will be added to the archives.' +
                             ' The archiver has also been awarded 5 ftb points for his contribution.');
 					await applyFtbPoints(author, 5);
-					await (archiveChannel as TextChannel).send({ files: [archiveContent] });
+					await (archiveChannel as TextChannel).send({ content: archiveContent });
 					await msg.reply({ embeds: [pollEmbed], allowedMentions: { repliedUser: false } });
 				}
 				else if (noCount > memberCount / 2) {

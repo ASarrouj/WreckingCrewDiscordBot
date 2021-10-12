@@ -22,7 +22,7 @@ const XEmoji = {
 	text: ':x:'
 };
 
-const filename = path.join(__dirname, 'lastMemeIDs.ign.json');
+const filename = path.join(__dirname, 'lastMemeIds.ign.json');
 const lastMessageIds = JSON.parse(fs.readFileSync(filename, 'utf-8'));
 
 const filter = (reaction: MessageReaction, user: User) => {
@@ -114,7 +114,7 @@ export class Archiver {
 
 	static async reloadArchiveVotes(guild: Guild, memberCount: number): Promise<void> {
 		const memesChannel = guild.channels.cache.find(channel => {
-			return !!(channel as TextChannel).topic?.includes('#archivable');
+			return channel.name === 'memes' && !!(channel as TextChannel).topic?.includes('#archivable');
 		}) as TextChannel;
 		const archiveChannel = guild!.channels.cache.find(channel => {
 			return channel.name === 'the-archives';

@@ -22,7 +22,7 @@ const XEmoji = {
 	text: ':x:'
 };
 
-const filename = path.join(__dirname, 'lastMemeIds.ign.json');
+const filename = path.join(__dirname, '..', '..', '..', 'data', 'lastMemeIds.ign.json');
 const lastMessageIds = JSON.parse(fs.readFileSync(filename, 'utf-8'));
 
 const filter = (reaction: MessageReaction, user: User) => {

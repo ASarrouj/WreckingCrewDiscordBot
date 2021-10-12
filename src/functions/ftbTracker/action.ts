@@ -12,7 +12,7 @@ import { SlashCommand } from '../types';
 import fs from 'fs';
 import path from 'path';
 
-const filename = path.join(__dirname, '..', '..', '..', 'ftbDatabase.ign.json');
+const filename = path.join(__dirname, '..', '..', '..', 'data', 'ftbDatabase.ign.json');
 const ftbDatabase = JSON.parse(fs.readFileSync(filename, 'utf-8'));
 
 export function applyFtbPoints(user: GuildMember, pointAmount: number): string {

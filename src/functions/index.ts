@@ -49,6 +49,7 @@ export function init(client: Client): void {
 					memberCount: 0,
 				};
 			}
+			await Archiver.reloadArchiveVotes(guild, extraGuildInfo[guild.id].memberCount);
 		}));
 	});
 

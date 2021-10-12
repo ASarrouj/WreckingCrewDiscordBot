@@ -63,9 +63,6 @@ const createArchiveVote = async (msg: Message, memberCount: number, yesCount = 1
 	else if (msg.embeds[0]) {
 		archiveContent = msg.embeds[0].url!;
 	}
-	else {
-		return;
-	}
 	const archiveChannel = msg.guild!.channels.cache.find(channel => {
 		return channel.name == 'the-archives';
 	});
@@ -73,7 +70,6 @@ const createArchiveVote = async (msg: Message, memberCount: number, yesCount = 1
 	if (!archiveChannel) {
 		return;
 	}
-	await msg.react(thumbsUpEmoji.emoji);
 
 	const collector = msg.createReactionCollector({ filter, maxUsers: memberCount, time });
 
@@ -109,7 +105,10 @@ export class Archiver {
 			if (!msg.embeds[0])
 				await wait(2000);
 
-			await createArchiveVote(msg, memberCount);
+			if (msg.embeds[0] || msg.attachments.first()) {
+				await msg.react(thumbsUpEmoji.emoji);
+				await createArchiveVote(msg, memberCount);
+			}
 		}
 	}
 
@@ -135,10 +134,16 @@ export class Archiver {
 				await Promise.all(msg.reactions.cache.map(async reaction => {
 					if (reaction.emoji.name === thumbsUpEmoji.emoji) {
 						const yesUsers = await reaction.users.fetch();
+						const selfUpvote = yesUsers.find(user => user.id === msg.author.id);
+						const botUpvote = yesUsers.find(user => user.bot);
 						votedUsers = votedUsers.concat(yesUsers.map(user => user.id));
 						yesCount = yesUsers.size;
-						if (yesUsers.find(user => user.bot) && yesUsers.find(user => user.id === msg.author.id)) {
+						if (botUpvote && selfUpvote) {
 							yesCount--;
+						}
+						else if (!botUpvote && !selfUpvote) {
+							await msg.react(thumbsUpEmoji.emoji);
+							yesCount++;
 						}
 					}
 					else if (reaction.emoji.name === thumbsDownEmoji.emoji) {

@@ -71,7 +71,12 @@ const createArchiveVote = async (msg: Message, memberCount: number, yesCount = 1
 		return;
 	}
 
-	const collector = msg.createReactionCollector({ filter, maxUsers: memberCount, time });
+	const collector = msg.createReactionCollector({ filter: (reaction: MessageReaction, user: User) => {
+		return (reaction.emoji.name == thumbsUpEmoji.emoji ||
+			reaction.emoji.name == thumbsDownEmoji.emoji ||
+			reaction.emoji.name == XEmoji.emoji) &&
+			!user.bot && !votedUsers.includes(user.id);
+	}, maxUsers: memberCount - votedUsers.length, time });
 
 	collector.on('collect', (reaction, user) => {
 		if (votedUsers.includes(user.id)) {

@@ -116,14 +116,14 @@ export class Archiver {
 			let yesCount = 0, noCount = 0;
 			let newMemes = new Collection<string, Message>();
 			let lastId = lastMessageIds[guild.id];
-			while (newMemes.size >= 5000) {
+			while (newMemes.size < 5000) {
 				const msgBatch = await memesChannel.messages.fetch({
 					limit: 100,
 					after: lastId,
 				});
 				newMemes = newMemes.concat(msgBatch);
 				lastId = msgBatch.last();
-				if (msgBatch.size != 100) {
+				if (msgBatch.size !== 100) {
 					break;
 				}
 			}

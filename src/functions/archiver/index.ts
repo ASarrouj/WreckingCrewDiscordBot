@@ -56,13 +56,7 @@ const postRejectedArchive = async (msg: Message) => {
 };
 
 const createArchiveVote = async (msg: Message, memberCount: number, yesCount = 1, noCount = 0, votedUsers = [msg.member?.user.id], time = dayInMs) => {
-	let archiveContent: string;
-	if (msg.attachments.first()) {
-		archiveContent = msg.attachments.first()!.url;
-	}
-	else if (msg.embeds[0]) {
-		archiveContent = msg.embeds[0].url!;
-	}
+	const archiveContent = msg.attachments.first()?.url || msg.embeds[0]?.url;
 	const archiveChannel = msg.guild!.channels.cache.find(channel => {
 		return channel.name == 'the-archives';
 	});
@@ -95,7 +89,7 @@ const createArchiveVote = async (msg: Message, memberCount: number, yesCount = 1
 
 	collector.on('end', async () => {
 		if (yesCount > memberCount / 2) {
-			postSuccessfulArchive(msg, archiveContent, archiveChannel as TextChannel, yesCount, memberCount);
+			postSuccessfulArchive(msg, archiveContent!, archiveChannel as TextChannel, yesCount, memberCount);
 		}
 		else if (noCount > memberCount / 2) {
 			postRejectedArchive(msg);
@@ -162,7 +156,7 @@ export class Archiver {
 				const msgMoment = moment(msg.createdTimestamp, 'x');
 				if (msgMoment.isSameOrBefore(moment().subtract(1, 'days'))) {
 					if (yesCount > memberCount / 2) {
-						postSuccessfulArchive(msg, (msg.attachments.first()!.url || msg.embeds[0].url)!, archiveChannel as TextChannel, yesCount, memberCount);
+						postSuccessfulArchive(msg, (msg.attachments.first()?.url || msg.embeds[0]?.url)!, archiveChannel as TextChannel, yesCount, memberCount);
 					}
 					else if (noCount > memberCount / 2) {
 						postRejectedArchive(msg);

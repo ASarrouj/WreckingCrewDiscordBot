@@ -115,6 +115,7 @@ export class Archiver {
 		if (memesChannel && archiveChannel && lastMessageIds[guild.id]) {
 			let yesCount = 0, noCount = 0;
 			const newMemes = (await memesChannel.messages.fetch({
+				limit: 5000,
 				after: lastMessageIds[guild.id],
 			})).filter(msg => {
 				return (msg.embeds[0] || msg.attachments.first()) && !msg.member?.user.bot;

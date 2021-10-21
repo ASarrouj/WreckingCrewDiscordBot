@@ -25,13 +25,6 @@ const XEmoji = {
 const filename = path.join(__dirname, '..', '..', '..', 'data', 'lastMemeIds.ign.json');
 const lastMessageIds = JSON.parse(fs.readFileSync(filename, 'utf-8'));
 
-const filter = (reaction: MessageReaction, user: User) => {
-	return (reaction.emoji.name == thumbsUpEmoji.emoji ||
-		reaction.emoji.name == thumbsDownEmoji.emoji ||
-		reaction.emoji.name == XEmoji.emoji) &&
-		!user.bot;
-};
-
 const postSuccessfulArchive = async (msg: Message, archiveContent: string, archiveChannel: TextChannel, yesCount: number, memberCount: number) => {
 	const pollEmbed = new MessageEmbed();
 	const description = yesCount === memberCount ? 'Everybody liked that. 10 ftb points have been awarded for this amazing contribution to the archives.'
@@ -130,29 +123,36 @@ export class Archiver {
 			await Promise.all(newMemes.map(async msg => {
 				let votedUsers: string[] = [msg.author.id];
 
-				await Promise.all(msg.reactions.cache.map(async reaction => {
-					if (reaction.emoji.name === thumbsUpEmoji.emoji) {
-						const yesUsers = await reaction.users.fetch();
-						const selfUpvote = yesUsers.find(user => user.id === msg.author.id);
-						const botUpvote = yesUsers.find(user => user.bot);
-						votedUsers = votedUsers.concat(yesUsers.map(user => user.id));
-						yesCount = yesUsers.size;
-						if (botUpvote && selfUpvote) {
-							yesCount--;
-						}
-						else if (!botUpvote && !selfUpvote) {
-							await msg.react(thumbsUpEmoji.emoji);
-							yesCount++;
-						}
+				const upVoteReaction = msg.reactions.cache.find(reaction => reaction.emoji.name === thumbsUpEmoji.emoji);
+				const downVoteReaction = msg.reactions.cache.find(reaction => reaction.emoji.name === thumbsDownEmoji.emoji);
+
+				if (upVoteReaction) {
+					const yesUsers = await upVoteReaction.users.fetch();
+					const selfUpvote = yesUsers.find(user => user.id === msg.author.id);
+					const botUpvote = yesUsers.find(user => user.bot);
+					votedUsers = votedUsers.concat(yesUsers.map(user => user.id));
+					yesCount = yesUsers.size;
+					if (botUpvote && selfUpvote) {
+						yesCount--;
 					}
-					else if (reaction.emoji.name === thumbsDownEmoji.emoji) {
-						const noUsers = (await reaction.users.fetch()).map(user => {
-							return user.id;
-						});
-						votedUsers = votedUsers.concat(noUsers);
-						noCount = noUsers.length;
+					else if (!botUpvote && !selfUpvote) {
+						await msg.react(thumbsUpEmoji.emoji);
+						yesCount++;
 					}
-				}));
+				}
+				else {
+					await msg.react(thumbsUpEmoji.emoji);
+					yesCount++;
+				}
+
+				if (downVoteReaction) {
+					const noUsers = (await downVoteReaction.users.fetch()).map(user => {
+						return user.id;
+					});
+					votedUsers = votedUsers.concat(noUsers);
+					noCount = noUsers.length;
+				}
+
 				const msgMoment = moment(msg.createdTimestamp, 'x');
 				if (msgMoment.isSameOrBefore(moment().subtract(1, 'days'))) {
 					if (yesCount > memberCount / 2) {

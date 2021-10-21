@@ -1,6 +1,6 @@
 import { applyFtbPoints } from '../ftbTracker/action';
 import { wait } from '../../helpers/constants';
-import { Guild, Message, MessageEmbed, MessageReaction, TextChannel, User } from 'discord.js';
+import { Guild, Message, MessageEmbed, MessageReaction, TextChannel, User, Collection } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
 import moment from 'moment';
@@ -114,14 +114,16 @@ export class Archiver {
 
 		if (memesChannel && archiveChannel && lastMessageIds[guild.id]) {
 			let yesCount = 0, noCount = 0;
-			let newMemes: Message[] = [];
-			while (newMemes.length >= 5000) {
-				const memeBatch = Array.from((await memesChannel.messages.fetch({
+			let newMemes = new Collection<string, Message>();
+			let lastId = lastMessageIds[guild.id];
+			while (newMemes.size >= 5000) {
+				const msgBatch = await memesChannel.messages.fetch({
 					limit: 100,
-					after: lastMessageIds[guild.id],
-				})).values());
-				newMemes = newMemes.concat(memeBatch);
-				if (memeBatch.length != 100) {
+					after: lastId,
+				});
+				newMemes = newMemes.concat(msgBatch);
+				lastId = msgBatch.last();
+				if (msgBatch.size != 100) {
 					break;
 				}
 			}

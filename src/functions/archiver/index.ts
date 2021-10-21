@@ -114,10 +114,18 @@ export class Archiver {
 
 		if (memesChannel && archiveChannel && lastMessageIds[guild.id]) {
 			let yesCount = 0, noCount = 0;
-			const newMemes = (await memesChannel.messages.fetch({
-				limit: 5000,
-				after: lastMessageIds[guild.id],
-			})).filter(msg => {
+			let newMemes: Message[] = [];
+			while (newMemes.length >= 5000) {
+				const memeBatch = Array.from((await memesChannel.messages.fetch({
+					limit: 100,
+					after: lastMessageIds[guild.id],
+				})).values());
+				newMemes = newMemes.concat(memeBatch);
+				if (memeBatch.length != 100) {
+					break;
+				}
+			}
+			newMemes = newMemes.filter(msg => {
 				return (msg.embeds[0] || msg.attachments.first()) && !msg.member?.user.bot;
 			});
 

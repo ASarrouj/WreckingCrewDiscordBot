@@ -167,14 +167,14 @@ export class Archiver {
 				const msgMoment = moment(msg.createdTimestamp, 'x');
 				if (msgMoment.isSameOrBefore(moment().subtract(1, 'days'))) {
 					if (yesCount > memberCount / 2) {
-						postSuccessfulArchive(msg, (msg.attachments.first()?.url || msg.embeds[0]?.url)!, archiveChannel as TextChannel, yesCount, memberCount);
+						await postSuccessfulArchive(msg, (msg.attachments.first()?.url || msg.embeds[0]?.url)!, archiveChannel as TextChannel, yesCount, memberCount);
 					}
 					else if (noCount > memberCount / 2) {
-						postRejectedArchive(msg);
+						await postRejectedArchive(msg);
 					}
 				}
 				else {
-					createArchiveVote(msg, memberCount, yesCount, noCount, votedUsers, dayInMs - moment().diff(msgMoment));
+					await createArchiveVote(msg, memberCount, yesCount, noCount, votedUsers, dayInMs - moment().diff(msgMoment));
 				}
 			}));
 		}

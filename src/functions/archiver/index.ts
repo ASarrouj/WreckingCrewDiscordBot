@@ -113,7 +113,6 @@ export class Archiver {
 		});
 
 		if (memesChannel && archiveChannel && lastMessageIds[guild.id]) {
-			let yesCount = 0, noCount = 0;
 			let newMemes = new Collection<string, Message>();
 			let lastId = lastMessageIds[guild.id];
 			while (newMemes.size < 5000) {
@@ -132,6 +131,7 @@ export class Archiver {
 			});
 
 			await Promise.all(newMemes.map(async msg => {
+                                let yesCount = 0, noCount = 0;
 				let votedUsers: string[] = [msg.author.id];
 
 				const upVoteReaction = msg.reactions.cache.find(reaction => reaction.emoji.name === thumbsUpEmoji.emoji);

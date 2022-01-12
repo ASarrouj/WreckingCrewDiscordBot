@@ -27,15 +27,24 @@ const lastMessageIds = JSON.parse(fs.readFileSync(filename, 'utf-8'));
 
 const postSuccessfulArchive = async (msg: Message, archiveContent: string, archiveChannel: TextChannel, yesCount: number, memberCount: number) => {
 	const pollEmbed = new MessageEmbed();
-	const description = yesCount === memberCount ? 'Everybody liked that. 10 ftb points have been awarded for this amazing contribution to the archives.'
-		: 'A majority of the server has decided this was archive worthy, and thus it will be added to the archives.' +
+	let description, addedPoints;
+	if (yesCount === memberCount) {
+		description = 'Everybody liked that. 10 ftb points have been awarded for this amazing contribution to the archives.';
+		addedPoints = 10;
+		lastMessageIds[msg.guildId!].ignore.push(msg.id);
+	}
+	else {
+		description = 'A majority of the server has decided this was archive worthy, and thus it will be added to the archives.' +
 		'The archiver has also been awarded 5 ftb points for his contribution.';
+		addedPoints = 5;
+		lastMessageIds[msg.guildId!].lastMessage = msg.id;
+		lastMessageIds[msg.guildId!].ignore = [];
+	}
 	pollEmbed.setTitle('Meme Approved')
 		.setDescription(description);
-	await applyFtbPoints(msg.member!,  yesCount === memberCount ? 10 : 5);
+	await applyFtbPoints(msg.member!,  addedPoints);
 	await archiveChannel.send({ content: archiveContent });
 	await msg.reply({ embeds: [pollEmbed], allowedMentions: { repliedUser: false } });
-	lastMessageIds[msg.guildId!] = msg.id;
 	fs.writeFileSync(filename, JSON.stringify(lastMessageIds));
 };
 
@@ -49,7 +58,13 @@ const postRejectedArchive = async (msg: Message) => {
 };
 
 const createArchiveVote = async (msg: Message, memberCount: number, yesCount = 1, noCount = 0, votedUsers = [msg.member?.user.id], time = dayInMs) => {
-	const archiveContent = msg.attachments.first()?.url || msg.embeds[0]?.url;
+	let archiveContent: string;
+	if (msg.attachments.first()?.url) {
+		archiveContent = msg.content + msg.attachments.first()?.url!;
+	}
+	else {
+		archiveContent = msg.content;
+	}
 	const archiveChannel = msg.guild!.channels.cache.find(channel => {
 		return channel.name == 'the-archives';
 	});
@@ -112,9 +127,9 @@ export class Archiver {
 			return channel.name === 'the-archives';
 		});
 
-		if (memesChannel && archiveChannel && lastMessageIds[guild.id]) {
+		if (memesChannel && archiveChannel && lastMessageIds[guild.id]?.lastMessage) {
 			let newMemes = new Collection<string, Message>();
-			let lastId = lastMessageIds[guild.id];
+			let lastId = lastMessageIds[guild.id].lastMessage;
 			while (newMemes.size < 5000) {
 				const msgBatch = await memesChannel.messages.fetch({
 					limit: 100,
@@ -127,11 +142,11 @@ export class Archiver {
 				}
 			}
 			newMemes = newMemes.filter(msg => {
-				return (msg.embeds[0] || msg.attachments.first()) && !msg.member?.user.bot;
+				return (msg.embeds[0] || msg.attachments.first()) && !msg.member?.user.bot && !lastMessageIds[guild.id].ignore.includes(msg.id);
 			});
 
 			await Promise.all(newMemes.map(async msg => {
-                                let yesCount = 0, noCount = 0;
+                let yesCount = 0, noCount = 0;
 				let votedUsers: string[] = [msg.author.id];
 
 				const upVoteReaction = msg.reactions.cache.find(reaction => reaction.emoji.name === thumbsUpEmoji.emoji);

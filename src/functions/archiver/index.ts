@@ -1,9 +1,11 @@
 import { applyFtbPoints } from '../ftbTracker/action';
 import { wait } from '../../helpers/constants';
+import { ArchiveContent } from './types';
 import { Guild, Message, MessageEmbed, MessageReaction, TextChannel, User, Collection } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
 import moment from 'moment';
+import { postMemeToTwitter } from './twitter';
 
 const dayInMs = 86400000;
 
@@ -25,7 +27,7 @@ const XEmoji = {
 const filename = path.join(__dirname, '..', '..', '..', 'data', 'lastMemeIds.ign.json');
 const lastMessageIds = JSON.parse(fs.readFileSync(filename, 'utf-8'));
 
-const postSuccessfulArchive = async (msg: Message, archiveContent: string, archiveChannel: TextChannel, yesCount: number, memberCount: number) => {
+const postSuccessfulArchive = async (msg: Message, archiveContent: ArchiveContent, archiveChannel: TextChannel, yesCount: number, memberCount: number) => {
 	const pollEmbed = new MessageEmbed();
 	let description, addedPoints;
 	if (yesCount === memberCount) {
@@ -43,8 +45,9 @@ const postSuccessfulArchive = async (msg: Message, archiveContent: string, archi
 	pollEmbed.setTitle('Meme Approved')
 		.setDescription(description);
 	await applyFtbPoints(msg.member!,  addedPoints);
-	await archiveChannel.send({ content: archiveContent });
+	await archiveChannel.send({ content: archiveContent.joinStrings() });
 	await msg.reply({ embeds: [pollEmbed], allowedMentions: { repliedUser: false } });
+	await postMemeToTwitter(archiveContent);
 	fs.writeFileSync(filename, JSON.stringify(lastMessageIds));
 };
 
@@ -58,13 +61,7 @@ const postRejectedArchive = async (msg: Message) => {
 };
 
 const createArchiveVote = async (msg: Message, memberCount: number, yesCount = 1, noCount = 0, votedUsers = [msg.member?.user.id], time = dayInMs) => {
-	let archiveContent: string;
-	if (msg.attachments.first()?.url) {
-		archiveContent = msg.content + msg.attachments.first()?.url!;
-	}
-	else {
-		archiveContent = msg.content;
-	}
+	let archiveContent = new ArchiveContent(msg);
 	const archiveChannel = msg.guild!.channels.cache.find(channel => {
 		return channel.name == 'the-archives';
 	});
@@ -182,7 +179,8 @@ export class Archiver {
 				const msgMoment = moment(msg.createdTimestamp, 'x');
 				if (msgMoment.isSameOrBefore(moment().subtract(1, 'days'))) {
 					if (yesCount > memberCount / 2) {
-						await postSuccessfulArchive(msg, (msg.attachments.first()?.url || msg.embeds[0]?.url)!, archiveChannel as TextChannel, yesCount, memberCount);
+						const archiveContent = new ArchiveContent(msg);
+						await postSuccessfulArchive(msg, archiveContent, archiveChannel as TextChannel, yesCount, memberCount);
 					}
 					else if (noCount > memberCount / 2) {
 						await postRejectedArchive(msg);

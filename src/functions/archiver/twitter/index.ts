@@ -1,7 +1,7 @@
 import axios from 'axios';
 import oauth1a from 'oauth-1.0a';
 import crypto from 'crypto';
-import FormData from 'form-data'
+import FormData from 'form-data';
 import { ArchiveContent } from '../types';
 import { twitterApiCreds as creds } from '../../../secureConstants.ign';
 import { wait } from '../../../helpers';
@@ -24,7 +24,7 @@ export async function postMemeToTwitter(content: ArchiveContent) {
 				url: `${apiUrl}tweets`,
 				body: {
 					quote_tweet_id: tweetId,
-					text: content.caption
+					text: content.twitterCaption
 				},
 				method: 'POST'
 			}
@@ -45,10 +45,10 @@ export async function postMemeToTwitter(content: ArchiveContent) {
 			console.error(`Error with twitter retweeting: ${(e as any).response.data.errors}`)
 		}
 	}
-	else if (/^https:.*\.(jpg|jpeg|png|wpeg|gif|mp4)$/.test(content.url)) { // Upload media and tweet it
+	else if (/^https:((.*\.(jpg|jpeg|png|webp|gif|mp4)$)|(pbs\.twimg\.com.*format=(jpg|jpeg|png|webp|gif|mp4)))/.test(content.url)) { // Upload media and tweet it
 		const mediaId = await uploadMediaAndPost(content.url);
 		if (mediaId) {
-			await postMediaToTwitter(mediaId, content.caption)
+			await postMediaToTwitter(mediaId, content.twitterCaption)
 		}
 	}
 	else if (/https:.*(youtube.com\/watch)/.test(content.url)) {
@@ -87,13 +87,13 @@ const getOauthSignatureForRequest = async (request: any) => {
 
 	const headers = oauth.toHeader(authorization) as any;
 	headers.Accept = 'application/json';
-	headers['Content-Type'] = 'application/json';
+	headers['Content-Type'] = request.body.readable ? `multipart/form-data; boundary=${request.body._boundary}` : 'application/json';
 	return headers;
 }
 
 const uploadMediaAndPost = async (mediaUrl: string) => {
 	const mediaData = (await axios.get<string>(mediaUrl, { responseType: 'arraybuffer' })).data;
-	const ext = /(jpg|jpeg|png|wpeg|gif|mp4)$/.exec(mediaData)![0].replace('jpeg', 'jpg');
+	const ext = /(((jpg|jpeg|png|webp|gif|mp4)$)|((?<=format=)(jpg|jpeg|png|webp|gif|mp4)))/.exec(mediaUrl)![0].replace('jpeg', 'jpg');
 	if (ext == 'mp4') {
 		if (mediaData.length > MAX_VIDEO_SIZE_IN_BYTES)
 			return '';
@@ -170,7 +170,7 @@ const uploadMediaAndPost = async (mediaUrl: string) => {
 					body: statusBody
 				};
 				try {
-					processing_info = (await axios.get(finalizeRequest.url, { headers: await getOauthSignatureForRequest(statusRequest) })).data.processing_info;
+					processing_info = (await axios.get(statusRequest.url, { headers: await getOauthSignatureForRequest(statusRequest) })).data.processing_info;
 				}
 				catch (e) {
 					console.error(`Error with media upload status\n`)
@@ -179,7 +179,11 @@ const uploadMediaAndPost = async (mediaUrl: string) => {
 				await wait(1000);
 				time += 1000;
 			}
-			return media_id_string;
+			if (time < 60000) {
+				return media_id_string;
+			}
+			console.error('Media ran out of time to be uploaded\n');
+			return '';
 		}
 		catch (e) {
 			console.error(`Error with media upload finalize\n`)
@@ -209,7 +213,7 @@ const postMediaToTwitter = async (mediaId: string, caption: string) => {
 		await axios.post(request.url, request.body, { headers: await getOauthSignatureForRequest(request) });
 	}
 	catch (e) {
-		console.error(`Error with twitter posting\n`)
+		console.error(`Error with twitter media posting\n`)
 		console.error((e as any).response.data.errors)
 	}
 }

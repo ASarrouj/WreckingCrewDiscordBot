@@ -30,17 +30,14 @@ const lastMessageIds = JSON.parse(fs.readFileSync(filename, 'utf-8'));
 const postSuccessfulArchive = async (msg: Message, archiveContent: ArchiveContent, archiveChannel: TextChannel, yesCount: number, memberCount: number) => {
 	const pollEmbed = new MessageEmbed();
 	let description, addedPoints;
-	if (yesCount === memberCount) {
+	if (yesCount === memberCount) { // Early meme don't overwrite
 		description = 'Everybody liked that. 10 ftb points have been awarded for this amazing contribution to the archives.';
 		addedPoints = 10;
-		lastMessageIds[msg.guildId!].ignore.push(msg.id);
 	}
 	else {
 		description = 'A majority of the server has decided this was archive worthy, and thus it will be added to the archives.' +
 		'The archiver has also been awarded 5 ftb points for his contribution.';
 		addedPoints = 5;
-		lastMessageIds[msg.guildId!].lastMessage = msg.id;
-		lastMessageIds[msg.guildId!].ignore = [];
 	}
 	pollEmbed.setTitle('Meme Approved')
 		.setDescription(description);
@@ -48,7 +45,6 @@ const postSuccessfulArchive = async (msg: Message, archiveContent: ArchiveConten
 	await archiveChannel.send({ content: archiveContent.joinStrings() });
 	await msg.reply({ embeds: [pollEmbed], allowedMentions: { repliedUser: false } });
 	await postMemeToTwitter(archiveContent);
-	fs.writeFileSync(filename, JSON.stringify(lastMessageIds));
 };
 
 const postRejectedArchive = async (msg: Message) => {
@@ -72,8 +68,7 @@ const createArchiveVote = async (msg: Message, memberCount: number, yesCount = 1
 
 	const collector = msg.createReactionCollector({ filter: (reaction: MessageReaction, user: User) => {
 		return (reaction.emoji.name == thumbsUpEmoji.emoji ||
-			reaction.emoji.name == thumbsDownEmoji.emoji ||
-			reaction.emoji.name == XEmoji.emoji) &&
+			reaction.emoji.name == thumbsDownEmoji.emoji) &&
 			!user.bot && !votedUsers.includes(user.id);
 	}, maxUsers: memberCount - votedUsers.length, time });
 
@@ -98,6 +93,16 @@ const createArchiveVote = async (msg: Message, memberCount: number, yesCount = 1
 		}
 		else if (noCount > memberCount / 2) {
 			postRejectedArchive(msg);
+		}
+
+		if (yesCount + noCount == memberCount) {
+			lastMessageIds[msg.guildId!].ignore.push(msg.id);
+			fs.writeFileSync(filename, JSON.stringify(lastMessageIds));
+		}
+		else if (yesCount > memberCount / 2 || noCount > memberCount / 2) {
+			lastMessageIds[msg.guildId!].lastMessage = msg.id;
+			lastMessageIds[msg.guildId!].ignore = [];
+			fs.writeFileSync(filename, JSON.stringify(lastMessageIds));
 		}
 	});
 };
@@ -153,7 +158,7 @@ export class Archiver {
 					const yesUsers = await upVoteReaction.users.fetch();
 					const selfUpvote = yesUsers.find(user => user.id === msg.author.id);
 					const botUpvote = yesUsers.find(user => user.bot);
-					votedUsers = votedUsers.concat(yesUsers.map(user => user.id));
+					votedUsers = votedUsers.concat(yesUsers.filter(user => !user.bot).map(user => user.id));
 					yesCount = yesUsers.size;
 					if (botUpvote && selfUpvote) {
 						yesCount--;

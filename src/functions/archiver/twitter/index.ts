@@ -45,7 +45,7 @@ export async function postMemeToTwitter(content: ArchiveContent) {
 			console.error(`Error with twitter retweeting: ${(e as any).response.data.errors}`)
 		}
 	}
-	else if (/^https:((.*\.(jpg|jpeg|png|webp|gif|mp4)$)|(pbs\.twimg\.com.*format=(jpg|jpeg|png|webp|gif|mp4)))/.test(content.url)) { // Upload media and tweet it
+	else if (/^https:\/\/((.*\.(jpg|jpeg|png|webp|gif|mp4)$)|(pbs\.twimg\.com.*format=(jpg|jpeg|png|webp|gif|mp4)))/.test(content.url)) { // Upload media and tweet it
 		const mediaId = await uploadMediaAndPost(content.url);
 		if (mediaId) {
 			await postMediaToTwitter(mediaId, content.twitterCaption)

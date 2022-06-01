@@ -11,38 +11,52 @@ import {
 import { SlashCommand } from '../types';
 import fs from 'fs';
 import path from 'path';
+import { FtbEntry } from './types';
 
 const filename = path.join(__dirname, '..', '..', '..', 'data', 'ftbDatabase.ign.json');
-const ftbDatabase = JSON.parse(fs.readFileSync(filename, 'utf-8'));
+const ftbDatabase: { [key: string]: FtbEntry; } = JSON.parse(fs.readFileSync(filename, 'utf-8'));
 
 export function applyFtbPoints(user: GuildMember, pointAmount: number): string {
-	let logMsg;
+	ftbDatabase[user.id] = createOrGetFtbEntry(user)
 
-	if (Object.keys(ftbDatabase).includes(user.id)) {
-		ftbDatabase[user.id] += pointAmount;
-		logMsg = `${user.displayName} now has ${ftbDatabase[user.id]} FTB points (${pointAmount}).`;
-	}
-	else {
-		ftbDatabase[user.id] = pointAmount;
-		logMsg = `User ${user.displayName} has now been created, starting with ${ftbDatabase[user.id]} FTB points.`;
-	}
+	ftbDatabase[user.id].ftbPoints += pointAmount;
+
 	fs.writeFileSync(filename, JSON.stringify(ftbDatabase));
-	return logMsg;
+	return `${user.displayName} now has ${ftbDatabase[user.id].ftbPoints} FTB points (${pointAmount}).`;
 }
 
 export function resetFtbPoints(user: GuildMember, pointAmount: number): string {
-	let logMsg;
+	ftbDatabase[user.id] = createOrGetFtbEntry(user)
 
-	if (Object.keys(ftbDatabase).includes(user.id)) {
-		ftbDatabase[user.id] = pointAmount;
-		logMsg = `${user.displayName}'s FTB points have now been reset to ${ftbDatabase[user.id]}.`;
-	}
-	else {
-		ftbDatabase[user.id] = pointAmount;
-		logMsg = `User ${user.displayName} has now been created, starting with ${ftbDatabase[user.id]} FTB points.`;
-	}
+	ftbDatabase[user.id].ftbPoints = pointAmount;
+
 	fs.writeFileSync(filename, JSON.stringify(ftbDatabase));
-	return logMsg;
+	return `${user.displayName}'s FTB points have now been reset to ${pointAmount}.`;
+}
+
+export function recordMemeStats(user: GuildMember, pointAmount: number, yesCount: number, noCount: number) {
+	ftbDatabase[user.id] = createOrGetFtbEntry(user);
+	ftbDatabase[user.id].memesPosted++;
+	if (pointAmount > 0)
+		ftbDatabase[user.id].memesArchived++;
+	else if (pointAmount < 0)
+		ftbDatabase[user.id].memesRejected++;
+	ftbDatabase[user.id].upVotes += yesCount - 1
+	ftbDatabase[user.id].downVotes += noCount
+
+	applyFtbPoints(user, pointAmount);
+}
+
+export function createOrGetFtbEntry(user: GuildMember): FtbEntry {
+	return ftbDatabase[user.id] || {
+		ftbPoints: 0,
+		memesPosted: 0,
+		memesArchived: 0,
+		memesRejected: 0,
+		upVotes: 0,
+		downVotes: 0,
+		displayName: user.displayName
+	}
 }
 
 export class FtbShowAndEditCommand implements SlashCommand {
@@ -61,9 +75,9 @@ export class FtbShowAndEditCommand implements SlashCommand {
 						title: 'FTB Standings',
 						description: Object.entries(ftbDatabase).filter(ftbEntry => {
 							return guild.members.cache.has(ftbEntry[0]);
-						}).map((ftbEntry) => {
+						}).map(ftbEntry => {
 							const user = guild.members.cache.get(ftbEntry[0]);
-							return `${user!.displayName}: ${ftbEntry[1]}`;
+							return `${user!.displayName}: ${ftbEntry[1].ftbPoints}`;
 						}).join('\n')
 					}
 				]

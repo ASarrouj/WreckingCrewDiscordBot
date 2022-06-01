@@ -1,4 +1,4 @@
-import { applyFtbPoints } from '../ftbTracker/action';
+import { recordMemeStats } from '../ftbTracker/action';
 import { wait } from '../../helpers/constants';
 import { ArchiveContent } from './types';
 import { Guild, Message, MessageEmbed, MessageReaction, TextChannel, User, Collection } from 'discord.js';
@@ -41,7 +41,6 @@ const postSuccessfulArchive = async (msg: Message, archiveContent: ArchiveConten
 	}
 	pollEmbed.setTitle('Meme Approved')
 		.setDescription(description);
-	await applyFtbPoints(msg.member!, addedPoints);
 	await archiveChannel.send({ content: archiveContent.joinStrings() });
 	await msg.reply({ embeds: [pollEmbed], allowedMentions: { repliedUser: false } });
 	await postMemeToTwitter(archiveContent);
@@ -55,6 +54,7 @@ const postSuccessfulArchive = async (msg: Message, archiveContent: ArchiveConten
 		lastMessageIds[msg.guildId!][msg.channelId].ignore = [];
 		fs.writeFileSync(filename, JSON.stringify(lastMessageIds));
 	}
+	return addedPoints;
 };
 
 const postRejectedArchive = async (msg: Message, endedEarly: boolean) => {
@@ -62,7 +62,6 @@ const postRejectedArchive = async (msg: Message, endedEarly: boolean) => {
 	pollEmbed.setTitle('Meme Shot Down')
 		.setDescription('A majority of the server has decided this meme is terrible, and thus the author must pay the price.' +
 			' The author has been deducted 5 ftb points for wasting the server\'s time.');
-	await applyFtbPoints(msg.member!, -5);
 	await msg.reply({ embeds: [pollEmbed], allowedMentions: { repliedUser: false } });
 
 	if (endedEarly) {
@@ -74,6 +73,8 @@ const postRejectedArchive = async (msg: Message, endedEarly: boolean) => {
 		lastMessageIds[msg.guildId!][msg.channelId].ignore = [];
 		fs.writeFileSync(filename, JSON.stringify(lastMessageIds));
 	}
+
+	return -5;
 };
 
 const createArchiveVote = async (msg: Message, memberCount: number, yesCount = 1, noCount = 0, votedUsers = [msg.member?.user.id], time = dayInMs) => {
@@ -111,12 +112,14 @@ const createArchiveVote = async (msg: Message, memberCount: number, yesCount = 1
 
 	collector.on('end', async () => {
 		let endedEarly = yesCount + noCount == memberCount;
+		let points = 0;
 		if (yesCount >= memberCount / 2) {
-			postSuccessfulArchive(msg, archiveContent!, archiveChannel as TextChannel, yesCount, memberCount, endedEarly);
+			points = await postSuccessfulArchive(msg, archiveContent!, archiveChannel as TextChannel, yesCount, memberCount, endedEarly);
 		}
 		else if (noCount > memberCount / 2) {
-			postRejectedArchive(msg, endedEarly);
+			points = await postRejectedArchive(msg, endedEarly);
 		}
+		recordMemeStats(msg.member!, points, yesCount, noCount)
 	});
 };
 
@@ -142,9 +145,9 @@ export class Archiver {
 		});
 
 		if (archiveChannel) {
-			lastMessageIds[guild.id] = lastMessageIds[guild.id] ? lastMessageIds[guild.id] : {}
+			lastMessageIds[guild.id] = lastMessageIds[guild.id] || {}
 			await Promise.all(memeChannels.map(async channel => {
-				lastMessageIds[guild.id][channel.id] = lastMessageIds[guild.id][channel.id] ? lastMessageIds[guild.id][channel.id] : {name: channel.name}
+				lastMessageIds[guild.id][channel.id] = lastMessageIds[guild.id][channel.id] || {name: channel.name}
 				let newMemes = new Collection<string, Message>();
 				let lastId = lastMessageIds[guild.id][channel.id].lastMessage;
 				

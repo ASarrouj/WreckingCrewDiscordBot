@@ -46,7 +46,7 @@ export class ImageSearchCommand implements SlashCommand {
 				};
 			}
 		}
-		catch (e) {
+		catch (e: any) {
 			switch (e.message) {
 			case 'Response code 429 (Too Many Requests)':
 				interactionResponse = {

@@ -8,19 +8,20 @@ import { CoinFlipCommand } from './coinFlip';
 import { ChatFilter } from './chatFilter';
 import { Archiver } from './archiver';
 import { SlashCommand } from './types';
+import { adminId } from '../helpers';
 
 // eslint-disable-next-line @typescript-eslint/no-extra-parens
 const slashCommands = new Map<string, () => SlashCommand>([
-	[BoxOfSandCommand.commandName, () => {return new BoxOfSandCommand;}],
-	[ChasCommand.commandName, () => {return new ChasCommand;}],
-	[GoodBotCommand.commandName, () => {return new GoodBotCommand;}],
-	[PailOfWaterCommand.commandName, () => {return new PailOfWaterCommand;}],
-	[FtbResetCommand.commandName, () => {return new FtbResetCommand;}],
-	[FtbShowAndEditCommand.commandName, () => {return new FtbShowAndEditCommand;}],
-	[ImageSearchCommand.commandName, () => {return new ImageSearchCommand;}],
-	[PollCommand.commandName, () => {return new PollCommand;}],
-	[YoutubeCommand.commandName, () => {return new YoutubeCommand;}],
-	[CoinFlipCommand.commandName, () => {return new CoinFlipCommand;}]
+	[BoxOfSandCommand.commandName, () => { return new BoxOfSandCommand; }],
+	[ChasCommand.commandName, () => { return new ChasCommand; }],
+	[GoodBotCommand.commandName, () => { return new GoodBotCommand; }],
+	[PailOfWaterCommand.commandName, () => { return new PailOfWaterCommand; }],
+	[FtbResetCommand.commandName, () => { return new FtbResetCommand; }],
+	[FtbShowAndEditCommand.commandName, () => { return new FtbShowAndEditCommand; }],
+	[ImageSearchCommand.commandName, () => { return new ImageSearchCommand; }],
+	[PollCommand.commandName, () => { return new PollCommand; }],
+	[YoutubeCommand.commandName, () => { return new YoutubeCommand; }],
+	[CoinFlipCommand.commandName, () => { return new CoinFlipCommand; }]
 ]);
 
 const msgFunctions = [
@@ -62,13 +63,21 @@ export function init(client: Client): void {
 
 			if (linkedCommand) {
 				if (interaction.member || linkedCommand.DM) {
-					const guild = client.guilds.cache.get(interaction.guildId!)!;
-					const interactionResponse = await linkedCommand.respond(interaction, guild);
-					await interaction.reply(interactionResponse);
+					try {
+						const guild = client.guilds.cache.get(interaction.guildId!)!;
+						const interactionResponse = await linkedCommand.respond(interaction, guild);
+						await interaction.reply(interactionResponse);
 
-					if (linkedCommand.followup && !interactionResponse.ephemeral) {
-						const responseMsg = (await interaction.fetchReply()) as Message;
-						linkedCommand.followup(responseMsg, extraGuildInfo[interaction.guildId!].memberCount);
+						if (linkedCommand.followup && !interactionResponse.ephemeral) {
+							const responseMsg = (await interaction.fetchReply()) as Message;
+							linkedCommand.followup(responseMsg, extraGuildInfo[interaction.guildId!].memberCount);
+						}
+					} catch (e) {
+						console.error(`Error with slash command ${interactionName}\n`)
+						console.error(e);
+						client.users.fetch(adminId).then(user => {
+							user.send(`Error with slash command ${interactionName}`)
+						})
 					}
 				}
 				else {
@@ -89,9 +98,18 @@ export function init(client: Client): void {
 
 	client.on('messageCreate', msg => {
 		if (msg.author.id != client.user!.id && msg.guild !== null) {
-			msgFunctions.forEach((msgFunc) => {
-				msgFunc(msg, extraGuildInfo[msg.guild!.id].memberCount);
-			});
+			try {
+				msgFunctions.forEach((msgFunc) => {
+					msgFunc(msg, extraGuildInfo[msg.guild!.id].memberCount);
+				});
+			}
+			catch (e) {
+				console.error('Error with msg function\n')
+				console.error(e);
+				client.users.fetch(adminId).then(user => {
+					user.send('Error with msg function')
+				})
+			}
 		}
 	});
 

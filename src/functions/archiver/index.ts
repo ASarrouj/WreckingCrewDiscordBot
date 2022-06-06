@@ -27,7 +27,7 @@ const XEmoji = {
 const filename = path.join(__dirname, '..', '..', '..', 'data', 'lastMemeIds.ign.json');
 const lastMessageIds = JSON.parse(fs.readFileSync(filename, 'utf-8'));
 
-const postSuccessfulArchive = async (msg: Message, archiveContent: ArchiveContent, archiveChannel: TextChannel, yesCount: number, memberCount: number, endedEarly: boolean) => {
+const postSuccessfulArchive = async (msg: Message, archiveContent: ArchiveContent, archiveChannel: TextChannel, yesCount: number, memberCount: number, endedEarly: boolean, cancelTwitPost: boolean) => {
 	const pollEmbed = new MessageEmbed();
 	let description, addedPoints;
 	if (yesCount === memberCount) {
@@ -36,14 +36,15 @@ const postSuccessfulArchive = async (msg: Message, archiveContent: ArchiveConten
 	}
 	else {
 		description = 'A majority of the server has decided this was archive worthy, and thus it will be added to the archives.' +
-			'The archiver has also been awarded 5 ftb points for his contribution.';
+			' The archiver has also been awarded 5 ftb points for his contribution.';
 		addedPoints = 5;
 	}
 	pollEmbed.setTitle('Meme Approved')
 		.setDescription(description);
 	await archiveChannel.send({ content: archiveContent.joinStrings() });
 	await msg.reply({ embeds: [pollEmbed], allowedMentions: { repliedUser: false } });
-	await postMemeToTwitter(archiveContent);
+	if (!cancelTwitPost)
+		await postMemeToTwitter(archiveContent);
 
 	if (endedEarly) {
 		lastMessageIds[msg.guildId!][msg.channelId].ignore.push(msg.id);
@@ -79,6 +80,7 @@ const postRejectedArchive = async (msg: Message, endedEarly: boolean) => {
 
 const createArchiveVote = async (msg: Message, memberCount: number, yesCount = 1, noCount = 0, votedUsers = [msg.member?.user.id], time = dayInMs) => {
 	let archiveContent = new ArchiveContent(msg);
+	let cancelTwitPost = false;
 	const archiveChannel = msg.guild!.channels.cache.find(channel => {
 		return channel.name == 'the-archives';
 	});
@@ -90,7 +92,8 @@ const createArchiveVote = async (msg: Message, memberCount: number, yesCount = 1
 	const collector = msg.createReactionCollector({
 		filter: (reaction: MessageReaction, user: User) => {
 			return (reaction.emoji.name == thumbsUpEmoji.emoji ||
-				reaction.emoji.name == thumbsDownEmoji.emoji) &&
+				reaction.emoji.name == thumbsDownEmoji.emoji ||
+				reaction.emoji.name == XEmoji.emoji) &&
 				!user.bot && !votedUsers.includes(user.id);
 		}, maxUsers: memberCount - votedUsers.length, time
 	});
@@ -104,8 +107,11 @@ const createArchiveVote = async (msg: Message, memberCount: number, yesCount = 1
 		if (reaction.emoji.name == thumbsUpEmoji.emoji) {
 			yesCount++;
 		}
-		else {
+		else if (reaction.emoji.name == thumbsDownEmoji.emoji) {
 			noCount++;
+		}
+		else if (reaction.emoji.name == XEmoji.emoji) {
+			cancelTwitPost = true;
 		}
 		votedUsers.push(user.id);
 	});
@@ -114,7 +120,7 @@ const createArchiveVote = async (msg: Message, memberCount: number, yesCount = 1
 		let endedEarly = yesCount + noCount == memberCount;
 		let points = 0;
 		if (yesCount >= memberCount / 2) {
-			points = await postSuccessfulArchive(msg, archiveContent!, archiveChannel as TextChannel, yesCount, memberCount, endedEarly);
+			points = await postSuccessfulArchive(msg, archiveContent!, archiveChannel as TextChannel, yesCount, memberCount, endedEarly, cancelTwitPost);
 		}
 		else if (noCount > memberCount / 2) {
 			points = await postRejectedArchive(msg, endedEarly);
@@ -126,7 +132,7 @@ const createArchiveVote = async (msg: Message, memberCount: number, yesCount = 1
 export class Archiver {
 	static async archive(msg: Message, memberCount: number): Promise<void> {
 		const channel = msg.channel as TextChannel;
-		if (channel.topic?.includes('#archivable')) {
+		if (channel.topic?.includes('#archivable') && !(msg.content.includes(XEmoji.emoji) || msg.content.includes(XEmoji.text))) {
 			await wait(5000);
 
 			if (msg.embeds[0] || msg.attachments.first()) {
@@ -171,9 +177,11 @@ export class Archiver {
 				await Promise.all(newMemes.map(async msg => {
 					let yesCount = 0, noCount = 0;
 					let votedUsers: string[] = [msg.author.id];
+					let cancelTwitPost = false;
 
 					const upVoteReaction = msg.reactions.cache.find(reaction => reaction.emoji.name === thumbsUpEmoji.emoji);
 					const downVoteReaction = msg.reactions.cache.find(reaction => reaction.emoji.name === thumbsDownEmoji.emoji);
+					const authorXEmoji = msg.reactions.cache.find(reaction => reaction.emoji.name === XEmoji.emoji);
 
 					if (upVoteReaction) {
 						const yesUsers = await upVoteReaction.users.fetch();
@@ -202,11 +210,13 @@ export class Archiver {
 						noCount = noUsers.length;
 					}
 
+					cancelTwitPost = !!authorXEmoji && (await authorXEmoji.users.fetch()).has(msg.author.id)
+
 					const msgMoment = moment(msg.createdTimestamp, 'x');
 					if (msgMoment.isSameOrBefore(moment().subtract(1, 'days'))) {
 						if (yesCount >= memberCount / 2) {
 							const archiveContent = new ArchiveContent(msg);
-							await postSuccessfulArchive(msg, archiveContent, archiveChannel as TextChannel, yesCount, memberCount, false);
+							await postSuccessfulArchive(msg, archiveContent, archiveChannel as TextChannel, yesCount, memberCount, false, cancelTwitPost);
 						}
 						else if (noCount > memberCount / 2) {
 							await postRejectedArchive(msg, false);

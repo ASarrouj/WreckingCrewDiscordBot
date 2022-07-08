@@ -93,12 +93,16 @@ const createArchiveVote = async (msg: Message, memberCount: number, yesCount = 1
 		filter: (reaction: MessageReaction, user: User) => {
 			return (reaction.emoji.name == thumbsUpEmoji.emoji ||
 				reaction.emoji.name == thumbsDownEmoji.emoji ||
-				reaction.emoji.name == XEmoji.emoji) &&
-				!user.bot && !votedUsers.includes(user.id);
+				reaction.emoji.name == XEmoji.emoji && user.id == msg.author.id) &&
+				!user.bot;
 		}, maxUsers: memberCount - votedUsers.length, time
 	});
 
 	collector.on('collect', (reaction, user) => {
+		if (reaction.emoji.name == XEmoji.emoji) {
+			cancelTwitPost = true;
+			return;
+		}
 		if (votedUsers.includes(user.id)) {
 			user.send('Sorry, you cannot vote twice and your original vote cannot be changed.');
 			return;
@@ -109,9 +113,6 @@ const createArchiveVote = async (msg: Message, memberCount: number, yesCount = 1
 		}
 		else if (reaction.emoji.name == thumbsDownEmoji.emoji) {
 			noCount++;
-		}
-		else if (reaction.emoji.name == XEmoji.emoji) {
-			cancelTwitPost = true;
 		}
 		votedUsers.push(user.id);
 	});

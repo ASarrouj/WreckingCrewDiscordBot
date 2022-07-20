@@ -9,6 +9,7 @@ import { ChatFilter } from './chatFilter';
 import { Archiver } from './archiver';
 import { SlashCommand } from './types';
 import { adminId } from '../helpers';
+import { StatsCommand } from './stats';
 
 // eslint-disable-next-line @typescript-eslint/no-extra-parens
 const slashCommands = new Map<string, () => SlashCommand>([
@@ -21,7 +22,8 @@ const slashCommands = new Map<string, () => SlashCommand>([
 	[ImageSearchCommand.commandName, () => { return new ImageSearchCommand; }],
 	[PollCommand.commandName, () => { return new PollCommand; }],
 	[YoutubeCommand.commandName, () => { return new YoutubeCommand; }],
-	[CoinFlipCommand.commandName, () => { return new CoinFlipCommand; }]
+	[CoinFlipCommand.commandName, () => { return new CoinFlipCommand; }],
+	[StatsCommand.commandName, () => { return new StatsCommand; }]
 ]);
 
 const msgFunctions = [
@@ -119,5 +121,9 @@ export function init(client: Client): void {
 				editFunc(newMsg as Message);
 			});
 		}
+	});
+
+	client.on('messageDelete', async msg => {
+		await Archiver.repostDeletedMeme(msg as Message<boolean>, extraGuildInfo[msg.guild!.id].memberCount)
 	});
 }

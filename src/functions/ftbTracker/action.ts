@@ -146,28 +146,30 @@ export class FtbShowAndEditCommand implements SlashCommand {
 			collector.stop();
 		});
 
-		collector.on('end', async collected => {
-			const lastButtonPress = collected.last();
-			if (lastButtonPress && !blocked.includes(lastButtonPress.user.id)) {
-				const newEmbed = new MessageEmbed({
-					title: applyFtbPoints(this.recipient!, this.pointAmt),
-					description: `${this.author!.displayName}'s reason: ${this.reason ? this.reason : 'Not specified'}`,
-					footer: { text: `Approved by ${(lastButtonPress.member as GuildMember).displayName}` }
-				});
+		collector.on('end', async (collected, reason) => {
+			if (reason !== 'messageDelete') {
+				const lastButtonPress = collected.last();
+				if (lastButtonPress && !blocked.includes(lastButtonPress.user.id)) {
+					const newEmbed = new MessageEmbed({
+						title: applyFtbPoints(this.recipient!, this.pointAmt),
+						description: `${this.author!.displayName}'s reason: ${this.reason ? this.reason : 'Not specified'}`,
+						footer: { text: `Approved by ${(lastButtonPress.member as GuildMember).displayName}` }
+					});
+					await responseMsg.edit({
+						embeds: [newEmbed],
+						components: [],
+					});
+					return;
+				}
+
 				await responseMsg.edit({
-					embeds: [newEmbed],
+					embeds: [{
+						title: `${this.author!.displayName}'s transaction of ${this.pointAmt} to ${this.recipient!.displayName} was not approved and will not go through`,
+						description: `Original Reason: ${this.reason ? this.reason : 'Not specified'}`
+					}],
 					components: [],
 				});
-				return;
 			}
-
-			await responseMsg.edit({
-				embeds: [{
-					title: `${this.author!.displayName}'s transaction of ${this.pointAmt} to ${this.recipient!.displayName} was not approved and will not go through`,
-					description: `Original Reason: ${this.reason ? this.reason : 'Not specified'}`
-				}],
-				components: [],
-			});
 		});
 	}
 }

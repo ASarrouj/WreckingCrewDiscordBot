@@ -1,5 +1,6 @@
 import {
 	CommandInteraction,
+	EmbedField,
 	Guild,
 	InteractionReplyOptions,
 	Message, MessageActionRow,
@@ -54,7 +55,7 @@ export class PollCommand implements SlashCommand {
 	static commandName = 'poll';
 	private pollHours = 1;
 	private pollVotes: { [key: string]: string[] } = {};
-	private choices: string[] = [];
+	private choices: string[] = ["Option1", "Option2"];
 	async respond(payload: CommandInteraction, guild: Guild): Promise<InteractionReplyOptions> {
 		let question = payload.options.getString('question', true);
 		this.choices = payload.options.data.filter(option => {
@@ -161,48 +162,48 @@ export class PollCommand implements SlashCommand {
 			});
 		});
 
-		collector.on('end', async collected => {
-			const embedClone = lodash.cloneDeep(responseMsg.embeds) as MessageEmbed[];
-			const lastButtonPress = collected.last();
+		collector.on('end', async (collected, reason) => {
+			if (reason !== 'messageDelete') {
+				const embedClone = lodash.cloneDeep(responseMsg.embeds) as MessageEmbed[];
+				const lastButtonPress = collected.last();
 
-			if (lastButtonPress && (lastButtonPress.component as MessageButton).emoji!.name == XEmoji.emoji && lastButtonPress.user.id === responseMsg.interaction!.user.id) {
-				embedClone[0].description = 'The poll was ended early by the author. These are the final results.';
+				if (lastButtonPress && (lastButtonPress.component as MessageButton).emoji!.name == XEmoji.emoji && lastButtonPress.user.id === responseMsg.interaction!.user.id) {
+					embedClone[0].description = 'The poll was ended early by the author. These are the final results.';
+				}
+				else {
+					embedClone[0].description = 'The poll time has expired. Here are the results of the poll.';
+				}
+
+				await responseMsg.edit({
+					embeds: embedClone,
+					components: [],
+				});
+
+				await responseMsg.reply('This poll has concluded');
 			}
-			else {
-				embedClone[0].description = 'The poll time has expired. Here are the results of the poll.';
-			}
-
-			await responseMsg.edit({
-				embeds: embedClone,
-				components: [],
-			});
-
-			await responseMsg.reply('This poll has concluded');
 		});
 	}
 
 	private updateResponseEmbed(embed: MessageEmbedOptions | MessageEmbed, guild: Guild): MessageEmbedOptions | MessageEmbed {
-		embed.fields = (() => {
-			const fields = [];
-			for (let i = 0; i < this.choices.length; i++) {
-				const numVotes = this.pollVotes[numberEmojis[i].emoji].length;
-				if (i % 3 == 2) {
-					fields.push({
-						name: '\u200b',
-						value: '\u200b',
-					});
-				}
-				fields.push({
-					name: `${numberEmojis[i].text}  ${numVotes} ${numVotes === 1 ? 'vote' : 'votes'}` +
-						`${numVotes === 0 ? '' : ` (${this.pollVotes[numberEmojis[i].emoji].map(id => {
-							return guild.members.cache.get(id)!.displayName;
-						}).join(',')})`}`,
-					value: this.choices[i],
-					inline: true
+		embed.fields = this.choices.reduce((acc, cur, index) => {
+			const numVotes = this.pollVotes[numberEmojis[index].emoji].length;
+			if (index % 3 == 2) {
+				acc.push({
+					name: '\u200b',
+					value: '\u200b',
+					inline: false
 				});
 			}
-			return fields;
-		})();
+			acc.push({
+				name: `${numberEmojis[index].text}  ${numVotes} ${numVotes === 1 ? 'vote' : 'votes'}` +
+					`${numVotes === 0 ? '' : ` (${this.pollVotes[numberEmojis[index].emoji].map(id => {
+						return guild.members.cache.get(id)!.displayName;
+					}).join(',')})`}`,
+				value: cur,
+				inline: true
+			});
+			return acc
+		}, [] as EmbedField[])
 		return embed;
 	}
 }

@@ -92,7 +92,14 @@ const getOauthSignatureForRequest = async (request: any) => {
 }
 
 const uploadMediaAndPost = async (mediaUrl: string) => {
-	const mediaData = (await axios.get<string>(mediaUrl, { responseType: 'arraybuffer' })).data;
+	let mediaData;
+	try {
+		mediaData = (await axios.get<string>(mediaUrl, { responseType: 'arraybuffer' })).data;
+	}
+	catch(e) {
+		console.error(e)
+		return '';
+	}
 	const ext = /(((jpg|jpeg|png|webp|gif|mp4)$)|((?<=format=)(jpg|jpeg|png|webp|gif|mp4)))/.exec(mediaUrl)![0].replace('jpeg', 'jpg');
 	if (ext == 'mp4') {
 		if (mediaData.length > MAX_VIDEO_SIZE_IN_BYTES)

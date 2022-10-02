@@ -13,14 +13,14 @@ export class StatsCommand implements SlashCommand {
 	async respond(payload: CommandInteraction): Promise<InteractionReplyOptions> {
 		const user = payload.options.getUser('user');
 
-		const embeds:MessageEmbed[] = []
+		const embeds:MessageEmbed[] = [];
 		if (user) {
 			embeds.push(createStatEmbed(payload.guild!.members.cache.get(user.id)!));
 		}
 		else {
-			payload.guild!.members.cache.filter(member => !member.user.bot).each(member => {
-				embeds.push(createStatEmbed(member))
-			})
+			await Promise.all(payload.guild!.members.cache.filter(member => !member.user.bot).each(member => {
+				embeds.push(createStatEmbed(member));
+			}));
 		}
 
 		return {
@@ -30,7 +30,7 @@ export class StatsCommand implements SlashCommand {
 }
 
 function createStatEmbed(user: GuildMember) {
-	const ftbEntry = createOrGetFtbEntry(user)
+	const ftbEntry = createOrGetFtbEntry(user);
 	return new MessageEmbed({
 		author: {
 			name: user.displayName,
@@ -54,7 +54,7 @@ function createStatEmbed(user: GuildMember) {
 			},
 			{
 				name: 'Meme Archive Rate',
-				value: `${String(((ftbEntry.memesArchived / ftbEntry.memesPosted) * 100).toFixed(2))}%`,
+				value: `${String((ftbEntry.memesArchived / ftbEntry.memesPosted * 100).toFixed(2))}%`,
 				inline: true
 			},
 			{
@@ -63,5 +63,5 @@ function createStatEmbed(user: GuildMember) {
 				inline: true
 			}
 		]
-	})
+	});
 }

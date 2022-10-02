@@ -75,11 +75,11 @@ export function init(client: Client): void {
 							linkedCommand.followup(responseMsg, extraGuildInfo[interaction.guildId!].memberCount);
 						}
 					} catch (e) {
-						console.error(`Error with slash command ${interactionName}\n`)
+						console.error(`Error with slash command ${interactionName}\n`);
 						console.error(e);
 						client.users.fetch(adminId).then(user => {
-							user.send(`Error with slash command ${interactionName}`)
-						})
+							user.send(`Error with slash command ${interactionName}`);
+						});
 					}
 				}
 				else {
@@ -106,11 +106,11 @@ export function init(client: Client): void {
 				});
 			}
 			catch (e) {
-				console.error('Error with msg function\n')
+				console.error('Error with msg function\n');
 				console.error(e);
 				client.users.fetch(adminId).then(user => {
-					user.send('Error with msg function')
-				})
+					user.send('Error with msg function');
+				});
 			}
 		}
 	});
@@ -124,6 +124,7 @@ export function init(client: Client): void {
 	});
 
 	client.on('messageDelete', async msg => {
-		await Archiver.repostDeletedMeme(msg as Message<boolean>, extraGuildInfo[msg.guild!.id].memberCount)
+		if (msg.author?.id != client.user!.id && msg.guild !== null)
+			await Archiver.repostDeletedMeme(msg as Message<boolean>, extraGuildInfo[msg.guild!.id].memberCount);
 	});
 }

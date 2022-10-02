@@ -25,7 +25,29 @@ const XEmoji = {
 };
 
 const filename = path.join(__dirname, '..', '..', '..', 'data', 'lastMemeIds.ign.json');
-const lastMessageIds = JSON.parse(fs.readFileSync(filename, 'utf-8'));
+let fileDataStr;
+if (fs.existsSync(filename)) {
+	fileDataStr = fs.readFileSync(filename, 'utf-8');
+}
+else {
+	fileDataStr = '{}';
+	fs.writeFileSync(filename, '{}');
+}
+const lastMessageIds = JSON.parse(fileDataStr);
+
+function updateLastMessageIds(msg: Message, endedEarly: boolean) {
+	lastMessageIds[msg.guildId!] = lastMessageIds[msg.guildId!] ?? {};
+	lastMessageIds[msg.guildId!][msg.channelId] = lastMessageIds[msg.guildId!][msg.channelId] ?? {};
+	if (endedEarly) {
+		lastMessageIds[msg.guildId!][msg.channelId].ignore.push(msg.id);
+		fs.writeFileSync(filename, JSON.stringify(lastMessageIds));
+	}
+	else {
+		lastMessageIds[msg.guildId!][msg.channelId].lastMessage = msg.id;
+		lastMessageIds[msg.guildId!][msg.channelId].ignore = [];
+		fs.writeFileSync(filename, JSON.stringify(lastMessageIds));
+	}
+}
 
 async function postSuccessfulArchive(msg: Message, archiveContent: ArchiveContent, archiveChannel: TextChannel, yesCount: number, memberCount: number, endedEarly: boolean, cancelTwitPost: boolean) {
 	const pollEmbed = new MessageEmbed();
@@ -46,15 +68,8 @@ async function postSuccessfulArchive(msg: Message, archiveContent: ArchiveConten
 	if (!cancelTwitPost)
 		await postMemeToTwitter(archiveContent);
 
-	if (endedEarly) {
-		lastMessageIds[msg.guildId!][msg.channelId].ignore.push(msg.id);
-		fs.writeFileSync(filename, JSON.stringify(lastMessageIds));
-	}
-	else {
-		lastMessageIds[msg.guildId!][msg.channelId].lastMessage = msg.id;
-		lastMessageIds[msg.guildId!][msg.channelId].ignore = [];
-		fs.writeFileSync(filename, JSON.stringify(lastMessageIds));
-	}
+	updateLastMessageIds(msg, endedEarly);
+
 	return addedPoints;
 }
 
@@ -65,15 +80,7 @@ async function postRejectedArchive(msg: Message, endedEarly: boolean) {
 			' The author has been deducted 5 ftb points for wasting the server\'s time.');
 	await msg.reply({ embeds: [pollEmbed], allowedMentions: { repliedUser: false } });
 
-	if (endedEarly) {
-		lastMessageIds[msg.guildId!][msg.channelId].ignore.push(msg.id);
-		fs.writeFileSync(filename, JSON.stringify(lastMessageIds));
-	}
-	else {
-		lastMessageIds[msg.guildId!][msg.channelId].lastMessage = msg.id;
-		lastMessageIds[msg.guildId!][msg.channelId].ignore = [];
-		fs.writeFileSync(filename, JSON.stringify(lastMessageIds));
-	}
+	updateLastMessageIds(msg, endedEarly);
 
 	return -5;
 }
@@ -226,9 +233,9 @@ export class Archiver {
 		});
 
 		if (archiveChannel) {
-			lastMessageIds[guild.id] = lastMessageIds[guild.id] || {};
+			lastMessageIds[guild.id] = lastMessageIds[guild.id] ?? {};
 			await Promise.all(memeChannels.map(async channel => {
-				lastMessageIds[guild.id][channel.id] = lastMessageIds[guild.id][channel.id] || { name: channel.name };
+				lastMessageIds[guild.id][channel.id] = lastMessageIds[guild.id][channel.id] ?? { name: channel.name };
 				let newMemes = new Collection<string, Message>();
 				let lastId = lastMessageIds[guild.id][channel.id].lastMessage;
 

@@ -14,10 +14,18 @@ import path from 'path';
 import { FtbEntry } from './types';
 
 const filename = path.join(__dirname, '..', '..', '..', 'data', 'ftbDatabase.ign.json');
-const ftbDatabase: { [key: string]: FtbEntry; } = JSON.parse(fs.readFileSync(filename, 'utf-8'));
+let fileDataStr;
+if (fs.existsSync(filename)) {
+	fileDataStr = fs.readFileSync(filename, 'utf-8');
+}
+else {
+	fs.writeFileSync(filename, '{}');
+	fileDataStr = '{}';
+}
+const ftbDatabase: { [key: string]: FtbEntry; } = JSON.parse(fileDataStr);
 
 export function applyFtbPoints(user: GuildMember, pointAmount: number): string {
-	ftbDatabase[user.id] = createOrGetFtbEntry(user)
+	ftbDatabase[user.id] = createOrGetFtbEntry(user);
 
 	ftbDatabase[user.id].ftbPoints += pointAmount;
 
@@ -26,7 +34,7 @@ export function applyFtbPoints(user: GuildMember, pointAmount: number): string {
 }
 
 export function resetFtbPoints(user: GuildMember, pointAmount: number): string {
-	ftbDatabase[user.id] = createOrGetFtbEntry(user)
+	ftbDatabase[user.id] = createOrGetFtbEntry(user);
 
 	ftbDatabase[user.id].ftbPoints = pointAmount;
 
@@ -41,8 +49,8 @@ export function recordMemeStats(user: GuildMember, pointAmount: number, yesCount
 		ftbDatabase[user.id].memesArchived++;
 	else if (pointAmount < 0)
 		ftbDatabase[user.id].memesRejected++;
-	ftbDatabase[user.id].upVotes += yesCount - 1
-	ftbDatabase[user.id].downVotes += noCount
+	ftbDatabase[user.id].upVotes += yesCount - 1;
+	ftbDatabase[user.id].downVotes += noCount;
 
 	applyFtbPoints(user, pointAmount);
 }
@@ -56,7 +64,7 @@ export function createOrGetFtbEntry(user: GuildMember): FtbEntry {
 		upVotes: 0,
 		downVotes: 0,
 		displayName: user.displayName
-	}
+	};
 }
 
 export class FtbShowAndEditCommand implements SlashCommand {

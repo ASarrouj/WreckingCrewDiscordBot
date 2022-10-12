@@ -11,7 +11,7 @@ const siteRegexes = [
 	/https:.*cdn\.discordapp\.com\/attachments\/[^\s]+/,
 	/https:.*pbs\.twimg\.com\/media[^\s]+/,
 	/https:.*a\.co[^\s]+/,
-	/https:.*tiktok\.com\/.+\/video\/[^\s]+/,
+	/https:.*tiktok\.com\/(.+\/video|t)\/[^\s]+/,
 	/https:.*theonion\.com\/[^\s]+/,
 	/https:.*i\.kym-cdn\.com\/photos\/images\/[^\s]+/,
 	/https:.*clips\.twitch\.tv\/[^\s]+/,

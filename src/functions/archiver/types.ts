@@ -1,4 +1,4 @@
-import { Message } from 'discord.js';
+import { Message, MessageAttachment, MessageOptions } from 'discord.js';
 import { idRegex } from '../../helpers';
 
 const siteRegexes = [
@@ -26,13 +26,23 @@ export interface MemeReactionInfo {
 }
 
 export class ArchiveContent {
-	public url: string;
+	public url?: string;
+	public attachments: MessageAttachment[]
 	public caption: string;
 	public twitterCaption: string; // Sanitizes Discord Server Names
+	public type: MemeType;
 
 	constructor(msg: Message) {
-		this.url = msg.attachments.first()?.url || getMemeLink(msg.content);
-		this.caption = this.isMeme() ? msg.content.split(this.url)[0]?.trim() : '';
+		if (msg.attachments.size > 0) {
+			this.attachments = Array.from(msg.attachments.values());
+			this.type = MemeType.Pic;
+			this.caption = msg.content;
+		}
+		else {
+			this.url = getMemeLink(msg.content);
+			this.type = MemeType.Link;
+			this.caption = msg.content.split(this.url[0])[0]?.trim();
+		}
 		this.twitterCaption = this.caption.replace(idRegex, (userId) => {
 			const idNum = /\d+/.exec(userId);
 			if (idNum !== null) {
@@ -42,12 +52,15 @@ export class ArchiveContent {
 		});
 	}
 
-	public joinStrings() {
-		return this.caption ? `${this.caption} ${this.url}` : this.url;
+	public createMsg(): MessageOptions {
+		if (this.type == MemeType.Link) {
+			return { content: this.caption ? `${this.caption} ${this.url}` : this.url };
+		}
+		return { content: this.caption, attachments: this.attachments };
 	}
 
 	public isMeme() {
-		return this.url.length > 0;
+		return this.url !== undefined || this.attachments !== undefined;
 	}
 }
 
@@ -58,4 +71,9 @@ function getMemeLink(msgContent: string) {
 			return match[0];
 	}
 	return '';
+}
+
+enum MemeType {
+	Pic,
+	Link
 }

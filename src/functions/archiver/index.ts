@@ -63,7 +63,7 @@ async function postSuccessfulArchive(msg: Message, archiveContent: ArchiveConten
 	}
 	pollEmbed.setTitle('Meme Approved')
 		.setDescription(description);
-	await archiveChannel.send({ content: archiveContent.joinStrings() });
+	await archiveChannel.send(archiveContent.createMsg());
 	await msg.reply({ embeds: [pollEmbed], allowedMentions: { repliedUser: false } });
 	if (!cancelTwitPost)
 		await postMemeToTwitter(archiveContent);

@@ -5,6 +5,7 @@ import FormData from 'form-data';
 import { ArchiveContent } from '../types';
 import { twitterApiCreds as creds } from '../../../secureConstants.ign';
 import { wait } from '../../../helpers';
+import { MessageAttachment } from 'discord.js';
 
 const tweetIdRegex = /(?<=status\/)\d+/;
 const apiUrl = 'https://api.twitter.com/2/';
@@ -15,7 +16,7 @@ const MAX_CHUNK_SIZE = 102400; // 100KB
 const SEGMENT_NUM = 30;
 
 export async function postMemeToTwitter(content: ArchiveContent) {
-	if (content.url.includes('twitter.com') && content.url.includes('/status')) { // Retweet or Quote Tweet
+	if (content.url?.includes('twitter.com') && content.url.includes('/status')) { // Retweet or Quote Tweet
 		const tweetId = tweetIdRegex.exec(content.url)![0];
 		let request;
 
@@ -45,13 +46,20 @@ export async function postMemeToTwitter(content: ArchiveContent) {
 			console.error(`Error with twitter retweeting: ${(e as any).response.data.errors}`);
 		}
 	}
-	else if (/^https:\/\/((.*\.(jpg|jpeg|png|webp|gif|mp4)$)|(pbs\.twimg\.com.*format=(jpg|jpeg|png|webp|gif|mp4)))/.test(content.url)) { // Upload media and tweet it
-		const mediaId = await uploadMediaAndPost(content.url);
+	else if (content.url && /^https:\/\/((.*\.(jpg|jpeg|png|webp|gif|mp4)$)|(pbs\.twimg\.com.*format=(jpg|jpeg|png|webp|gif|mp4)))/.test(content.url)) { // Upload media and tweet it
+		const mediaId = await uploadMediaAndPost(content.url!);
 		if (mediaId) {
-			await postMediaToTwitter(mediaId, content.twitterCaption);
+			await postMediaToTwitter([mediaId], content.twitterCaption);
 		}
 	}
-	else if (/https:.*(youtube.com\/watch)/.test(content.url)) {
+	else if (/^https:\/\/((.*\.(jpg|jpeg|png|webp|gif|mp4)$)|(pbs\.twimg\.com.*format=(jpg|jpeg|png|webp|gif|mp4)))/.test(content.attachments[0].url)) { // Upload media and tweet it
+		const mediaIds = await uploadMedias(content.attachments);
+		if (mediaIds.length > 0) {
+			await postMediaToTwitter(mediaIds, content.twitterCaption);
+		}
+	}
+	//TODO: remove exclamations and fix ugly branching
+	else if (/https:.*(youtube.com\/watch)/.test(content.url!)) {
 		const request = {
 			url: `${apiUrl}users/${creds.id}/retweets`,
 			body: {
@@ -203,13 +211,24 @@ const uploadMediaAndPost = async (mediaUrl: string) => {
 	return '';
 };
 
-const postMediaToTwitter = async (mediaId: string, caption: string) => {
+const uploadMedias = async (attachments: MessageAttachment[]) => {
+	const ids: string[] = [];
+	await attachments.reduce(async (prev, cur) => {
+		await prev;
+		const id = await uploadMediaAndPost(cur.url);
+		ids.push(id);
+	}, Promise.resolve());
+
+	return ids;
+};
+
+const postMediaToTwitter = async (mediaIds: string[], caption: string) => {
 	const request = {
 		url: `${apiUrl}tweets`,
 		body: {
 			text: caption ? caption : undefined,
 			media: {
-				media_ids: [mediaId]
+				media_ids: mediaIds
 			}
 		},
 		method: 'POST'

@@ -222,11 +222,11 @@ const uploadMedias = async (attachments: MessageAttachment[]) => {
 	return ids;
 };
 
-const postMediaToTwitter = async (mediaIds: string[], caption: string) => {
+const postMediaToTwitter = async (mediaIds: string[], caption?: string) => {
 	const request = {
 		url: `${apiUrl}tweets`,
 		body: {
-			text: caption ? caption : undefined,
+			text: caption,
 			media: {
 				media_ids: mediaIds
 			}

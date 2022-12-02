@@ -28,22 +28,25 @@ export interface MemeReactionInfo {
 export class ArchiveContent {
 	public url?: string;
 	public attachments: MessageAttachment[]
-	public caption: string;
-	public twitterCaption: string; // Sanitizes Discord Server Names
+	public caption?: string;
+	public twitterCaption?: string; // Sanitizes Discord Server Names
 	public type: MemeType;
 
 	constructor(msg: Message) {
 		if (msg.attachments.size > 0) {
+			// console.log(msg);
+			// console.log(msg.attachments.at(0));
 			this.attachments = Array.from(msg.attachments.values());
 			this.type = MemeType.Pic;
-			this.caption = msg.content;
+			this.caption = msg.content || undefined;
 		}
 		else {
 			this.url = getMemeLink(msg.content);
+			this.attachments = [];
 			this.type = MemeType.Link;
-			this.caption = msg.content.split(this.url[0])[0]?.trim();
+			this.caption = msg.content.split(this.url)[0]?.trim() || undefined;
 		}
-		this.twitterCaption = this.caption.replace(idRegex, (userId) => {
+		this.twitterCaption = this.caption?.replace(idRegex, (userId) => {
 			const idNum = /\d+/.exec(userId);
 			if (idNum !== null) {
 				return msg.guild?.members.cache.get(idNum[0])?.displayName || '';
@@ -56,11 +59,11 @@ export class ArchiveContent {
 		if (this.type == MemeType.Link) {
 			return { content: this.caption ? `${this.caption} ${this.url}` : this.url };
 		}
-		return { content: this.caption, attachments: this.attachments };
+		return { content: this.caption, files: this.attachments };
 	}
 
 	public isMeme() {
-		return this.url !== undefined || this.attachments !== undefined;
+		return !!this.url || this.attachments.length > 0;
 	}
 }
 
@@ -73,7 +76,7 @@ function getMemeLink(msgContent: string) {
 	return '';
 }
 
-enum MemeType {
+export enum MemeType {
 	Pic,
 	Link
 }

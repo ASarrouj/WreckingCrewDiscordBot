@@ -1,6 +1,6 @@
 import { Client, Intents } from 'discord.js';
 import { init } from './functions';
-import { loginToken } from './secureConstants.ign';
+import { loginTokens } from './secureConstants.ign';
 
 const client = new Client({
 	intents: [
@@ -14,4 +14,4 @@ const client = new Client({
 
 init(client);
 
-client.login(loginToken);
+client.login(loginTokens[process.argv[2]]);

@@ -1,4 +1,4 @@
-import { recordMemeStats } from '../ftbTracker/action';
+import { storeMeme } from '../ftbTracker/action';
 import { adminId } from '../../helpers/constants';
 import { ArchiveContent, MemeReactionInfo } from './types';
 import { Guild, Message, MessageEmbed, MessageReaction, TextChannel, User, Collection, MessageActionRow, MessageButton } from 'discord.js';
@@ -136,7 +136,7 @@ async function createArchiveVote(msg: Message, memberCount: number, memeInfo: Me
 			else if (noCount >= memberCount / 2 && yesCount < memberCount / 2) {
 				points = await postRejectedArchive(msg, endedEarly);
 			}
-			recordMemeStats(poster, points, yesCount, noCount);
+			storeMeme(poster, points, yesCount, noCount);
 		}
 	});
 }
@@ -271,7 +271,7 @@ export class Archiver {
 						else if (noCount > memberCount / 2 && yesCount < memberCount / 2) {
 							points = await postRejectedArchive(msg, false);
 						}
-						recordMemeStats(msg.member!, points, yesCount, noCount);
+						storeMeme(msg.member!, points, yesCount, noCount);
 					}
 					else {
 						await createArchiveVote(msg, memberCount, { yesCount, noCount, votedUsers, cancelTwitPost }, archiveContent, dayInMs - moment().diff(msgMoment));

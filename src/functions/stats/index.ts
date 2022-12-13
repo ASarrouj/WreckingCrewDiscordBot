@@ -5,7 +5,7 @@ import {
 	MessageEmbed,
 } from 'discord.js';
 import { SlashCommand } from '../types';
-import { createOrGetFtbEntry } from '../ftbTracker';
+import { getUser } from '../ftbTracker';
 
 export class StatsCommand implements SlashCommand {
 	static commandName = 'stats';
@@ -30,7 +30,7 @@ export class StatsCommand implements SlashCommand {
 }
 
 function createStatEmbed(user: GuildMember) {
-	const ftbEntry = createOrGetFtbEntry(user);
+	const ftbEntry = getUser(user);
 	return new MessageEmbed({
 		author: {
 			name: user.displayName,

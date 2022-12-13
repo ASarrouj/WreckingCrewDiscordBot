@@ -6,65 +6,53 @@ import {
 	Message,
 	MessageActionRow,
 	MessageButton,
-	MessageEmbed
+	MessageEmbed,
+	TextChannel
 } from 'discord.js';
 import { SlashCommand } from '../types';
-import fs from 'fs';
-import path from 'path';
-import { FtbEntry } from './types';
+import { pool } from '../../db/index';
+import { DbChannel, DbUser } from '../../db/types';
+import { PoolClient } from 'pg';
 
-const filename = path.join(__dirname, '..', '..', '..', 'data', 'ftbDatabase.ign.json');
-let fileDataStr;
-if (fs.existsSync(filename)) {
-	fileDataStr = fs.readFileSync(filename, 'utf-8');
-}
-else {
-	fs.writeFileSync(filename, '{}');
-	fileDataStr = '{}';
-}
-const ftbDatabase: { [key: string]: FtbEntry; } = JSON.parse(fileDataStr);
+export async function storeFtbTransaction(user: GuildMember, pointAmount: number): Promise<string> {
+	const client = await pool.connect();
+	await getUser(client, user);
 
-export function applyFtbPoints(user: GuildMember, pointAmount: number): string {
-	ftbDatabase[user.id] = createOrGetFtbEntry(user);
+	await client.query();
 
-	ftbDatabase[user.id].ftbPoints += pointAmount;
-
-	fs.writeFileSync(filename, JSON.stringify(ftbDatabase));
+	client.release();
 	return `${user.displayName} now has ${ftbDatabase[user.id].ftbPoints} FTB points (${pointAmount}).`;
 }
 
 export function resetFtbPoints(user: GuildMember, pointAmount: number): string {
-	ftbDatabase[user.id] = createOrGetFtbEntry(user);
-
-	ftbDatabase[user.id].ftbPoints = pointAmount;
-
-	fs.writeFileSync(filename, JSON.stringify(ftbDatabase));
-	return `${user.displayName}'s FTB points have now been reset to ${pointAmount}.`;
+	return 'This command is currently disabled.';
 }
 
-export function recordMemeStats(user: GuildMember, pointAmount: number, yesCount: number, noCount: number) {
-	ftbDatabase[user.id] = createOrGetFtbEntry(user);
-	ftbDatabase[user.id].memesPosted++;
-	if (pointAmount > 0)
-		ftbDatabase[user.id].memesArchived++;
-	else if (pointAmount < 0)
-		ftbDatabase[user.id].memesRejected++;
-	ftbDatabase[user.id].upVotes += yesCount - 1;
-	ftbDatabase[user.id].downVotes += noCount;
+export async function storeMeme(user: GuildMember, msg: Message, pointAmount: number, yesCount: number, noCount: number) {
+	const client = await pool.connect();
 
-	applyFtbPoints(user, pointAmount);
+	const userId = await getUser(client, user);
+	const channelId = await getChannel(client, msg.channel as TextChannel);
+
+	await client.query('INSERT INTO memes (msg_id, author, channel, date_created, upvotes, downvotes) ' +
+		`VALUES(${msg.id}, ${userId}, ${channelId}, ${msg.createdTimestamp}, ${yesCount - 1}, ${noCount})`);
+	client.release();
+
+	storeFtbTransaction(user, pointAmount);
 }
 
-export function createOrGetFtbEntry(user: GuildMember): FtbEntry {
-	return ftbDatabase[user.id] || {
-		ftbPoints: 0,
-		memesPosted: 0,
-		memesArchived: 0,
-		memesRejected: 0,
-		upVotes: 0,
-		downVotes: 0,
-		displayName: user.displayName
-	};
+export async function getUser(client: PoolClient, user: GuildMember) {
+	await client.query<DbUser>(`IF NOT EXISTS (SELECT id FROM users WHERE user_id = ${user.id}) ` +
+	'INSERT INTO users (user_id, recipient, date_created) ' +
+	`VALUES(${user.id}) ` +
+	`ELSE SELECT * FROM users WHERE user_id = ${user.id}`);
+}
+
+export async function getChannel(client: PoolClient, channel: TextChannel) {
+	await client.query<DbChannel>(`IF NOT EXISTS (SELECT id FROM channels WHERE channel_id = ${channel.id}) ` +
+	'INSERT INTO channels (channel_id, name, server) ' +
+	`VALUES(${channel.id}, ${channel.name}, ${channel.guild.id}) ` +
+	`ELSE SELECT * FROM channels WHERE channel_id = ${channel.id}`);
 }
 
 export class FtbShowAndEditCommand implements SlashCommand {
@@ -159,7 +147,7 @@ export class FtbShowAndEditCommand implements SlashCommand {
 				const lastButtonPress = collected.last();
 				if (lastButtonPress && !blocked.includes(lastButtonPress.user.id)) {
 					const newEmbed = new MessageEmbed({
-						title: applyFtbPoints(this.recipient!, this.pointAmt),
+						title: await storeFtbTransaction(this.recipient!, this.pointAmt),
 						description: `${this.author!.displayName}'s reason: ${this.reason ? this.reason : 'Not specified'}`,
 						footer: { text: `Approved by ${(lastButtonPress.member as GuildMember).displayName}` }
 					});

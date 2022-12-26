@@ -1,6 +1,6 @@
 import { CommandInteraction, Guild, InteractionReplyOptions } from 'discord.js';
 import { SlashCommand } from '../types';
-import { resetFtbPoints } from './action';
+import { resetFtbPoints } from '../../db/queries';
 
 export class FtbResetCommand implements SlashCommand {
 	static commandName = 'ftbreset';

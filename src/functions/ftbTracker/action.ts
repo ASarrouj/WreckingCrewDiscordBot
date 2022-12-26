@@ -7,82 +7,49 @@ import {
 	MessageActionRow,
 	MessageButton,
 	MessageEmbed,
-	TextChannel
 } from 'discord.js';
+import { getFtbSums, storeFtbTransaction } from '../../db/queries';
 import { SlashCommand } from '../types';
-import { pool } from '../../db/index';
-import { DbChannel, DbUser } from '../../db/types';
-import { PoolClient } from 'pg';
-
-export async function storeFtbTransaction(user: GuildMember, pointAmount: number): Promise<string> {
-	const client = await pool.connect();
-	await getUser(client, user);
-
-	await client.query();
-
-	client.release();
-	return `${user.displayName} now has ${ftbDatabase[user.id].ftbPoints} FTB points (${pointAmount}).`;
-}
-
-export function resetFtbPoints(user: GuildMember, pointAmount: number): string {
-	return 'This command is currently disabled.';
-}
-
-export async function storeMeme(user: GuildMember, msg: Message, pointAmount: number, yesCount: number, noCount: number) {
-	const client = await pool.connect();
-
-	const userId = await getUser(client, user);
-	const channelId = await getChannel(client, msg.channel as TextChannel);
-
-	await client.query('INSERT INTO memes (msg_id, author, channel, date_created, upvotes, downvotes) ' +
-		`VALUES(${msg.id}, ${userId}, ${channelId}, ${msg.createdTimestamp}, ${yesCount - 1}, ${noCount})`);
-	client.release();
-
-	storeFtbTransaction(user, pointAmount);
-}
-
-export async function getUser(client: PoolClient, user: GuildMember) {
-	await client.query<DbUser>(`IF NOT EXISTS (SELECT id FROM users WHERE user_id = ${user.id}) ` +
-	'INSERT INTO users (user_id, recipient, date_created) ' +
-	`VALUES(${user.id}) ` +
-	`ELSE SELECT * FROM users WHERE user_id = ${user.id}`);
-}
-
-export async function getChannel(client: PoolClient, channel: TextChannel) {
-	await client.query<DbChannel>(`IF NOT EXISTS (SELECT id FROM channels WHERE channel_id = ${channel.id}) ` +
-	'INSERT INTO channels (channel_id, name, server) ' +
-	`VALUES(${channel.id}, ${channel.name}, ${channel.guild.id}) ` +
-	`ELSE SELECT * FROM channels WHERE channel_id = ${channel.id}`);
-}
 
 export class FtbShowAndEditCommand implements SlashCommand {
 	static commandName = 'ftb';
 	pointAmt = 0;
 	author?: GuildMember;
 	recipient?: GuildMember;
-	reason?: string | null;
+	reason?: string;
 	subCommand?: string;
 	async respond(payload: CommandInteraction, guild: Guild): Promise<InteractionReplyOptions> {
 		this.subCommand = payload.options.getSubcommand();
 		if (this.subCommand === 'list') {
+			const userSums = await getFtbSums();
+
 			return {
 				embeds: [
 					{
 						title: 'FTB Standings',
-						description: Object.entries(ftbDatabase).filter(ftbEntry => {
-							return guild.members.cache.has(ftbEntry[0]);
-						}).map(ftbEntry => {
-							const user = guild.members.cache.get(ftbEntry[0]);
-							return `${user!.displayName}: ${ftbEntry[1].ftbPoints}`;
+						description: userSums.filter(dbRow => {
+							return guild.members.cache.has(dbRow.user_id);
+						}).map(dbRow => {
+							const user = guild.members.cache.get(dbRow.user_id);
+							if (user)
+								return `${user.displayName}: ${dbRow.ftbPoints}`;
 						}).join('\n')
 					}
 				]
 			};
 		}
-		this.author = guild.members.cache.get(payload.member!.user.id)!;
-		this.recipient = guild.members.cache.get(payload.options.getUser('user', true).id)!;
+		const authTemp = guild.members.cache.get(payload.user.id);
+		if (authTemp === undefined) {
+			throw 'Somehow the the FTB gifter is not defined';
+		}
+		const recTemp = guild.members.cache.get(payload.options.getUser('user', true).id);
+		if (recTemp === undefined) {
+			throw 'Somehow the the FTB receiver is not defined';
+		}
+		this.author = authTemp;
+		this.recipient = recTemp;
 		this.pointAmt = payload.options.getInteger('points', true);
-		this.reason = payload.options.getString('reason');
+		this.reason = payload.options.getString('reason') ?? undefined;
 
 		if (this.recipient.id === this.author.id) {
 			return {
@@ -127,7 +94,7 @@ export class FtbShowAndEditCommand implements SlashCommand {
 		if (this.subCommand === 'list') {
 			return;
 		}
-		const blocked = [this.recipient!.id, this.author!.id];
+		const blocked = [this.recipient?.id, this.author?.id];
 		const collector = responseMsg.createMessageComponentCollector({ componentType: 'BUTTON', time: 60 * 60 * 1000 });
 
 		collector.on('collect', async interaction => {
@@ -145,10 +112,11 @@ export class FtbShowAndEditCommand implements SlashCommand {
 		collector.on('end', async (collected, reason) => {
 			if (reason !== 'messageDelete') {
 				const lastButtonPress = collected.last();
-				if (lastButtonPress && !blocked.includes(lastButtonPress.user.id)) {
+				if (this.recipient && lastButtonPress && !blocked.includes(lastButtonPress.user.id)) {
+					await storeFtbTransaction(this.recipient.user.id, this.pointAmt, undefined, this.author?.user.id, this.reason);
 					const newEmbed = new MessageEmbed({
-						title: await storeFtbTransaction(this.recipient!, this.pointAmt),
-						description: `${this.author!.displayName}'s reason: ${this.reason ? this.reason : 'Not specified'}`,
+						title: `${this.recipient?.displayName} has received ${this.pointAmt} FTB points.`,
+						description: `${this.author?.displayName}'s reason: ${this.reason ? this.reason : 'Not specified'}`,
 						footer: { text: `Approved by ${(lastButtonPress.member as GuildMember).displayName}` }
 					});
 					await responseMsg.edit({
@@ -160,7 +128,7 @@ export class FtbShowAndEditCommand implements SlashCommand {
 
 				await responseMsg.edit({
 					embeds: [{
-						title: `${this.author!.displayName}'s transaction of ${this.pointAmt} to ${this.recipient!.displayName} was not approved and will not go through`,
+						title: `${this.author?.displayName}'s transaction of ${this.pointAmt} to ${this.recipient?.displayName} was not approved and will not go through`,
 						description: `Original Reason: ${this.reason ? this.reason : 'Not specified'}`
 					}],
 					components: [],

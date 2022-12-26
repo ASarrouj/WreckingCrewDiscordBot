@@ -1,11 +1,9 @@
-import { storeMeme } from '../ftbTracker/action';
 import { adminId } from '../../helpers/constants';
 import { ArchiveContent, MemeReactionInfo } from './types';
 import { Guild, Message, MessageEmbed, MessageReaction, TextChannel, User, Collection, MessageActionRow, MessageButton } from 'discord.js';
-import fs from 'fs';
-import path from 'path';
 import moment from 'moment';
 import { postMemeToTwitter } from './twitter';
+import { getLastChannelMemeId, storeMeme } from '../../db/queries';
 
 const dayInMs = 86400000;
 
@@ -24,35 +22,10 @@ const XEmoji = {
 	text: ':x:'
 };
 
-const filename = path.join(__dirname, '..', '..', '..', 'data', 'lastMemeIds.ign.json');
-let fileDataStr;
-if (fs.existsSync(filename)) {
-	fileDataStr = fs.readFileSync(filename, 'utf-8');
-}
-else {
-	fileDataStr = '{}';
-	fs.writeFileSync(filename, '{}');
-}
-const lastMessageIds = JSON.parse(fileDataStr);
-
-function updateLastMessageIds(msg: Message, endedEarly: boolean) {
-	lastMessageIds[msg.guildId!] = lastMessageIds[msg.guildId!] ?? {};
-	lastMessageIds[msg.guildId!][msg.channelId] = lastMessageIds[msg.guildId!][msg.channelId] ?? {};
-	if (endedEarly) {
-		lastMessageIds[msg.guildId!][msg.channelId].ignore.push(msg.id);
-		fs.writeFileSync(filename, JSON.stringify(lastMessageIds));
-	}
-	else {
-		lastMessageIds[msg.guildId!][msg.channelId].lastMessage = msg.id;
-		lastMessageIds[msg.guildId!][msg.channelId].ignore = [];
-		fs.writeFileSync(filename, JSON.stringify(lastMessageIds));
-	}
-}
-
-async function postSuccessfulArchive(msg: Message, archiveContent: ArchiveContent, archiveChannel: TextChannel, yesCount: number, memberCount: number, endedEarly: boolean, cancelTwitPost: boolean) {
+async function postSuccessfulArchive(msg: Message, archiveContent: ArchiveContent, archiveChannel: TextChannel, yesVoters: string[], memberCount: number, endedEarly: boolean, cancelTwitPost: boolean) {
 	const pollEmbed = new MessageEmbed();
 	let description, addedPoints;
-	if (yesCount === memberCount) {
+	if (yesVoters.length === memberCount) {
 		description = 'Everybody liked that. 10 ftb points have been awarded for this amazing contribution to the archives.';
 		addedPoints = 10;
 	}
@@ -63,13 +36,10 @@ async function postSuccessfulArchive(msg: Message, archiveContent: ArchiveConten
 	}
 	pollEmbed.setTitle('Meme Approved')
 		.setDescription(description);
-	console.log(archiveContent.createMsg());
 	await archiveChannel.send(archiveContent.createMsg());
 	await msg.reply({ embeds: [pollEmbed], allowedMentions: { repliedUser: false } });
-	if (!cancelTwitPost)
+	if (!cancelTwitPost && process.env[2] === 'prod')
 		await postMemeToTwitter(archiveContent);
-
-	updateLastMessageIds(msg, endedEarly);
 
 	return addedPoints;
 }
@@ -81,14 +51,12 @@ async function postRejectedArchive(msg: Message, endedEarly: boolean) {
 			' The author has been deducted 5 ftb points for wasting the server\'s time.');
 	await msg.reply({ embeds: [pollEmbed], allowedMentions: { repliedUser: false } });
 
-	updateLastMessageIds(msg, endedEarly);
-
 	return -5;
 }
 
 async function createArchiveVote(msg: Message, memberCount: number, memeInfo: MemeReactionInfo, archiveContent: ArchiveContent, time = dayInMs, poster = msg.member!) {
-	let { yesCount, noCount, cancelTwitPost } = memeInfo;
-	const { votedUsers } = memeInfo;
+	const { yesVoters, noVoters } = memeInfo;
+	let { cancelTwitPost } = memeInfo;
 	const archiveChannel = msg.guild!.channels.cache.find(channel => {
 		return channel.name == 'the-archives';
 	});
@@ -103,7 +71,7 @@ async function createArchiveVote(msg: Message, memberCount: number, memeInfo: Me
 				reaction.emoji.name == thumbsDownEmoji.emoji ||
 				reaction.emoji.name == XEmoji.emoji && (user.id == msg.author.id || user.id == adminId)) &&
 				!user.bot;
-		}, time
+		}, time, maxUsers: memberCount
 	});
 
 	collector.on('collect', (reaction, user) => {
@@ -112,83 +80,70 @@ async function createArchiveVote(msg: Message, memberCount: number, memeInfo: Me
 			return;
 		}
 
-		if (!votedUsers.includes(user.id)) {
+		if (user.id === msg.author.id) {
+			return;
+		}
+
+		if (!(yesVoters.includes(user.id) || noVoters.includes(user.id))) {
 			if (reaction.emoji.name == thumbsUpEmoji.emoji) {
-				yesCount++;
+				yesVoters.push(user.id);
 			}
 			else if (reaction.emoji.name == thumbsDownEmoji.emoji) {
-				noCount++;
+				noVoters.push(user.id);
 			}
-			votedUsers.push(user.id);
-		}
-		if (votedUsers.length == memberCount) {
-			collector.stop('allVoted');
+
+			if (yesVoters.length + noVoters.length == memberCount - 1) {
+				collector.stop('allVoted');
+			}
 		}
 	});
 
 	collector.on('end', async (collected, reason) => {
 		if (reason !== 'messageDelete') {
-			const endedEarly = yesCount + noCount == memberCount;
+			const endedEarly = yesVoters.length + noVoters.length == memberCount - 1;
 			let points = 0;
-			if (yesCount >= memberCount / 2 && noCount < memberCount / 2) {
-				points = await postSuccessfulArchive(msg, archiveContent!, archiveChannel as TextChannel, yesCount, memberCount, endedEarly, cancelTwitPost);
+			if (yesVoters.length + 1 >= memberCount / 2 && noVoters.length < memberCount / 2) {
+				points = await postSuccessfulArchive(msg, archiveContent!, archiveChannel as TextChannel, yesVoters, memberCount, endedEarly, cancelTwitPost);
 			}
-			else if (noCount >= memberCount / 2 && yesCount < memberCount / 2) {
+			else if (noVoters.length >= memberCount / 2 && yesVoters.length + 1 < memberCount / 2) {
 				points = await postRejectedArchive(msg, endedEarly);
 			}
-			storeMeme(poster, points, yesCount, noCount);
+			await storeMeme(poster.user.id, msg, points, yesVoters, noVoters, memberCount);
 		}
 	});
 }
 
 async function getMemeInfo(msg: Message) {
-	let yesCount = 0, noCount = 0;
-	let votedUsers: string[] = [msg.author.id];
 	let cancelTwitPost = false;
 
 	const upVoteReaction = msg.reactions.cache.find(reaction => reaction.emoji.name === thumbsUpEmoji.emoji);
 	const downVoteReaction = msg.reactions.cache.find(reaction => reaction.emoji.name === thumbsDownEmoji.emoji);
 	const authorXEmoji = msg.reactions.cache.find(reaction => reaction.emoji.name === XEmoji.emoji);
 
-	if (upVoteReaction) {
-		let yesUsers;
-		try {
-			yesUsers = await upVoteReaction.users.fetch();
-		}
-		catch {
-			yesUsers = upVoteReaction.users.cache;
-		}
-		const selfUpvote = yesUsers.find(user => user.id === msg.author.id);
-		const botUpvote = yesUsers.find(user => user.bot);
-		votedUsers = votedUsers.concat(yesUsers.filter(user => !user.bot).map(user => user.id));
-		yesCount = yesUsers.size;
-		if (botUpvote && selfUpvote) {
-			yesCount--;
-		}
-		else if (!botUpvote && !selfUpvote) {
-			await msg.react(thumbsUpEmoji.emoji);
-			yesCount++;
-		}
+	let yesUsers;
+	try {
+		yesUsers = await upVoteReaction?.users.fetch();
 	}
-	else {
+	catch {
+		yesUsers = upVoteReaction?.users.cache;
+	}
+	const selfUpvote = yesUsers?.find(user => user.id === msg.author.id);
+	const botUpvote = yesUsers?.find(user => user.bot);
+	if (!botUpvote && !selfUpvote) {
 		await msg.react(thumbsUpEmoji.emoji);
-		yesCount++;
 	}
+	const yesVoters = yesUsers?.map(user => user.id) ?? [];
 
-	if (downVoteReaction) {
-		let noUsers;
-		try {
-			noUsers = await downVoteReaction.users.fetch();
-		}
-		catch {
-			noUsers = downVoteReaction.users.cache;
-		}
-		const noUsersString = noUsers.map(user => {
-			return user.id;
-		});
-		votedUsers = votedUsers.concat(noUsersString);
-		noCount = noUsersString.length;
+	let noUsers;
+	try {
+		noUsers = await downVoteReaction?.users.fetch();
 	}
+	catch {
+		noUsers = downVoteReaction?.users.cache;
+	}
+	const noVoters = noUsers?.map(user => {
+		return user.id;
+	}) ?? [];
 
 	let xEmojiUsers;
 	try {
@@ -200,9 +155,8 @@ async function getMemeInfo(msg: Message) {
 	cancelTwitPost = !!authorXEmoji && !!xEmojiUsers?.has(msg.author.id);
 
 	return {
-		yesCount,
-		noCount,
-		votedUsers,
+		yesVoters,
+		noVoters,
 		cancelTwitPost
 	};
 }
@@ -216,9 +170,8 @@ export class Archiver {
 			if (archiveContent.isMeme()) {
 				await msg.react(thumbsUpEmoji.emoji);
 				await createArchiveVote(msg, memberCount, {
-					yesCount: 1,
-					noCount: 0,
-					votedUsers: [msg.author.id],
+					yesVoters: [],
+					noVoters: [],
 					cancelTwitPost: false
 				}, archiveContent);
 			}
@@ -234,13 +187,11 @@ export class Archiver {
 		});
 
 		if (archiveChannel) {
-			lastMessageIds[guild.id] = lastMessageIds[guild.id] ?? {};
 			await Promise.all(memeChannels.map(async channel => {
-				lastMessageIds[guild.id][channel.id] = lastMessageIds[guild.id][channel.id] ?? { name: channel.name };
 				let newMemes = new Collection<string, Message>();
-				let lastId = lastMessageIds[guild.id][channel.id].lastMessage;
+				let lastId = await getLastChannelMemeId(channel.id);
 
-				while (newMemes.size < 5000) {
+				while (lastId && newMemes.size < 5000) {
 					let msgBatch = await channel.messages.fetch({
 						limit: 100,
 						after: lastId,
@@ -256,42 +207,43 @@ export class Archiver {
 
 				await Promise.all(newMemes.map(async msg => {
 					const archiveContent = new ArchiveContent(msg);
-					if (!archiveContent.isMeme() || msg.member?.user.bot || lastMessageIds[guild.id][channel.id].ignore?.includes(msg.id))
+					if (!archiveContent.isMeme() || msg.member?.user.bot)
 						return;
 
-					const { yesCount, noCount, votedUsers, cancelTwitPost } = await getMemeInfo(msg);
+					const { yesVoters, noVoters, cancelTwitPost } = await getMemeInfo(msg);
 
 					const msgMoment = moment(msg.createdTimestamp, 'x');
 					if (msgMoment.isSameOrBefore(moment().subtract(1, 'days'))) {
 						let points = 0;
-						if (yesCount >= memberCount / 2 && noCount < memberCount / 2) {
+						if (yesVoters.length + 1 >= memberCount / 2 && noVoters.length < memberCount / 2) {
 							const archiveContent = new ArchiveContent(msg);
-							points = await postSuccessfulArchive(msg, archiveContent, archiveChannel as TextChannel, yesCount, memberCount, false, cancelTwitPost);
+							points = await postSuccessfulArchive(msg, archiveContent, archiveChannel as TextChannel, yesVoters, memberCount, false, cancelTwitPost);
 						}
-						else if (noCount > memberCount / 2 && yesCount < memberCount / 2) {
+						else if (noVoters.length > memberCount / 2 && yesVoters.length + 1 < memberCount / 2) {
 							points = await postRejectedArchive(msg, false);
 						}
-						storeMeme(msg.member!, points, yesCount, noCount);
+						if (msg.member?.user)
+							await storeMeme(msg.member?.user.id, msg, points, yesVoters, noVoters, memberCount);
 					}
 					else {
-						await createArchiveVote(msg, memberCount, { yesCount, noCount, votedUsers, cancelTwitPost }, archiveContent, dayInMs - moment().diff(msgMoment));
+						await createArchiveVote(msg, memberCount, { yesVoters, noVoters, cancelTwitPost }, archiveContent, dayInMs - moment().diff(msgMoment));
 					}
 				}));
 			}));
 		}
 	}
 
-	static async repostDeletedMeme(msg: Message, memberCount: number): Promise<void> {
-		const archiveContent = new ArchiveContent(msg);
-		if ((msg.channel as TextChannel).topic?.includes('#archivable') &&
-			archiveContent.isMeme() && !msg.member?.user.bot &&
-			!(msg.content.includes(XEmoji.emoji) || msg.content.includes(XEmoji.text)) &&
-			moment(msg.createdTimestamp, 'x').isSameOrAfter(moment().subtract(1, 'days'))) {
-			const { yesCount, noCount, votedUsers, cancelTwitPost } = await getMemeInfo(msg);
+	static async repostDeletedMeme(deletedMsg: Message, memberCount: number): Promise<void> {
+		const archiveContent = new ArchiveContent(deletedMsg);
+		if ((deletedMsg.channel as TextChannel).topic?.includes('#archivable') &&
+			archiveContent.isMeme() && !deletedMsg.member?.user.bot &&
+			!(deletedMsg.content.includes(XEmoji.emoji) || deletedMsg.content.includes(XEmoji.text)) &&
+			moment(deletedMsg.createdTimestamp, 'x').isSameOrAfter(moment().subtract(1, 'days'))) {
+			const { yesVoters, noVoters, cancelTwitPost } = await getMemeInfo(deletedMsg);
 
-			const admin = await msg.guild?.members.fetch(adminId);
+			const admin = await deletedMsg.guild?.members.fetch(adminId);
 			const adminMsg = await admin?.send({
-				content: `${msg.member!.displayName} deleted a meme with ${yesCount} upvotes and ${noCount} downvotes. Repost? ${archiveContent.url}`,
+				content: `${deletedMsg.member!.displayName} deleted a meme with ${yesVoters.length} upvotes and ${noVoters.length} downvotes. Repost? ${archiveContent.url}`,
 				components: [new MessageActionRow().addComponents(
 					new MessageButton({
 						customId: 'MemeRepost-Yes',
@@ -312,12 +264,12 @@ export class Archiver {
 				await interaction.deferUpdate();
 
 				if (interaction.customId == 'MemeRepost-Yes') {
-					const repostedMsg = await msg.channel.send({
-						content: `${msg.member!.displayName} tried deleting this meme, but luckily I saved it! ` +
+					const repostedMsg = await deletedMsg.channel.send({
+						content: `${deletedMsg.member!.displayName} tried deleting this meme, but luckily I saved it! ` +
 							`Previous upvotes and downvotes were recorded and the meme can still be voted on ${archiveContent.url}`
 					});
 
-					await createArchiveVote(repostedMsg, memberCount, { yesCount, noCount, votedUsers, cancelTwitPost }, archiveContent, 60 * 60 * 100, msg.member!);
+					await createArchiveVote(repostedMsg, memberCount, { yesVoters, noVoters, cancelTwitPost }, archiveContent, 60 * 60 * 100, deletedMsg.member!);
 				}
 			});
 

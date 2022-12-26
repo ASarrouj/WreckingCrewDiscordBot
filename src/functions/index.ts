@@ -10,6 +10,7 @@ import { Archiver } from './archiver';
 import { SlashCommand } from './types';
 import { adminId } from '../helpers';
 import { StatsCommand } from './stats';
+import { storeNewServers, storeNewUsers } from '../db/queries';
 
 // eslint-disable-next-line @typescript-eslint/no-extra-parens
 const slashCommands = new Map<string, () => SlashCommand>([
@@ -36,15 +37,14 @@ const extraGuildInfo: { [key: string]: { memberCount: number } } = {};
 
 export function init(client: Client): void {
 	client.on('ready', async () => {
+		await storeNewServers(client.guilds.cache);
 		await Promise.all(client.guilds.cache.map(async guild => {
-			console.log(`Bot is online on server ${guild.name}`);
 			try {
-				const members = await guild.members.fetch();
+				const members = (await guild.members.fetch()).filter(member => !member.user.bot);
 				extraGuildInfo[guild.id] = {
-					memberCount: await members.filter(member => {
-						return !member.user.bot;
-					}).size
+					memberCount: members.size
 				};
+				await storeNewUsers(Array.from(members.values()), guild.id);
 			}
 			catch (error) {
 				console.error(error);
@@ -53,6 +53,7 @@ export function init(client: Client): void {
 				};
 			}
 			await Archiver.reloadArchiveVotes(guild, extraGuildInfo[guild.id].memberCount);
+			console.log(`Bot is online on server ${guild.name}`);
 		}));
 	});
 
@@ -126,5 +127,10 @@ export function init(client: Client): void {
 	client.on('messageDelete', async msg => {
 		if (msg.author?.id != client.user!.id && msg.guild !== null)
 			await Archiver.repostDeletedMeme(msg as Message<boolean>, extraGuildInfo[msg.guild!.id].memberCount);
+	});
+
+	client.on('guildMemberAdd', async member => {
+		await storeNewUsers([member], member.guild.id);
+		extraGuildInfo[member.guild.id].memberCount++;
 	});
 }

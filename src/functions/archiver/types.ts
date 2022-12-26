@@ -19,9 +19,8 @@ const siteRegexes = [
 ];
 
 export interface MemeReactionInfo {
-	yesCount: number,
-	noCount: number,
-	votedUsers: string[],
+	yesVoters: string[],
+	noVoters: string[],
 	cancelTwitPost: boolean
 }
 
@@ -34,8 +33,6 @@ export class ArchiveContent {
 
 	constructor(msg: Message) {
 		if (msg.attachments.size > 0) {
-			// console.log(msg);
-			// console.log(msg.attachments.at(0));
 			this.attachments = Array.from(msg.attachments.values());
 			this.type = MemeType.Pic;
 			this.caption = msg.content || undefined;

@@ -18,13 +18,14 @@ export async function storeFtbTransaction(receiverId: string, pointAmount: numbe
 		amount: pointAmount,
 		recipient: getUserIdSubQ(receiverId),
 		date_created: `'${new Date().toISOString()}'`,
-		meme: memeId ?? null,
+		meme: memeId ?? 'null',
 		benefactor: giverId ? getUserIdSubQ(giverId) : 'null',
 		reason: reason ? `'${reason}'` : 'null'
 	});
 
 	await client.query(`INSERT INTO transactions (${insStrings.keyStr}) ` +
-						`VALUES (${insStrings.valStr})`);
+						`VALUES (${insStrings.valStr}) ` +
+						'ON CONFLICT (meme) DO NOTHING');
 
 	if (!passedClient)
 		client.release();
@@ -36,22 +37,25 @@ export async function storeMeme(userId: string, msg: Message, pointAmount: numbe
 	const dbUserId = getUserIdSubQ(userId);
 	const { id: channelId } = await getChannel(client, msg.channel as TextChannel);
 
-	const meme = (await client.query<DbMeme>(
+	let meme = (await client.query<DbMeme>(
 		'INSERT INTO memes (msg_id, author, channel, date_created, early, archived, rejected, loved) ' +
 		`VALUES('${msg.id}', ${dbUserId}, ${channelId}, '${msg.createdAt.toISOString()}', ${upvoters.length + downvoters.length === memberCount - 1}, ${pointAmount > 0}, ${pointAmount < 0}, ${upvoters.length === memberCount - 1})` +
 		'ON CONFLICT (msg_id) DO NOTHING ' +
 		'RETURNING id;')).rows[0];
 
-	if (meme !== undefined) {
-		if (pointAmount !== 0) {
-			await storeFtbTransaction(userId, pointAmount, meme.id, undefined, undefined, client);
-		}
-		if (upvoters.length > 0) {
-			await storeUpvotes(upvoters, meme.id, client);
-		}
-		if (downvoters.length > 0) {
-			await storeDownvotes(downvoters, meme.id, client);
-		}
+	if (meme === undefined) {
+		meme = (await client.query<DbMeme>(
+			`SELECT id FROM memes WHERE msg_id = '${msg.id}'`
+		)).rows[0];
+	}
+	if (pointAmount !== 0) {
+		await storeFtbTransaction(userId, pointAmount, meme.id, undefined, undefined, client);
+	}
+	if (upvoters.length > 0) {
+		await storeUpvotes(upvoters, meme.id, client);
+	}
+	if (downvoters.length > 0) {
+		await storeDownvotes(downvoters, meme.id, client);
 	}
 	client.release();
 }
@@ -63,13 +67,14 @@ export async function storeUpvotes(userIds: string[], meme: number, client?: Poo
 		passedClient = false;
 	}
 
-	const valQueries = (await Promise.all(userIds.map(async id => {
+	const valQueries = userIds.map(id => {
 		return `(${meme}, ${getUserIdSubQ(id)})`;
-	}))).join(', ');
+	}).join(', ');
 
 	await client.query(
 		'INSERT INTO upvotes (meme, "user") ' +
-		`VALUES ${valQueries};`);
+		`VALUES ${valQueries} ` +
+		'ON CONFLICT (meme, "user") DO NOTHING');
 
 	if (!passedClient) {
 		client.release();
@@ -83,13 +88,15 @@ export async function storeDownvotes(userIds: string[], meme: number, client?: P
 		passedClient = false;
 	}
 
-	const valQueries = (await Promise.all(userIds.map(async id => {
+	const valQueries = userIds.map(id => {
 		return `(${meme}, ${getUserIdSubQ(id)})`;
-	}))).join(', ');
+	}).join(', ');
+	console.log(valQueries);
 
 	await client.query(
 		'INSERT INTO downvotes (meme, "user") ' +
-		`VALUES ${valQueries};`);
+		`VALUES ${valQueries} ` +
+		'ON CONFLICT (meme, "user") DO NOTHING');
 
 	if (!passedClient) {
 		client.release();
@@ -161,7 +168,7 @@ export async function getFtbSums(fromYear = 2000, toYear = new Date().getUTCFull
 	return (await pool.query<FtbSum>(
 		'SELECT users.user_id, SUM(amount) as total ' +
 		'FROM users ' +
-		'INNER JOIN transactions ON users.id = transactions.user_id ' +
+		'INNER JOIN transactions ON users.id = transactions.recipient ' +
 			`AND transactions.date_created BETWEEN '${fromYear}/01/01' AND '${toYear}/12/31 23:59:59'` +
 		'GROUP BY users.id')).rows;
 }
@@ -172,7 +179,7 @@ export async function getUpvotesGiven(fromYear = 2000, toYear = new Date().getUT
 		'FROM users ' +
 		'INNER JOIN upvotes ON users.id = upvotes.user ' +
 		'INNER JOIN memes ON upvotes.meme = memes.id' +
-			`AND memes.date_created BETWEEN '${fromYear}/01/01' AND '${toYear}/12/31 23:59:59'` +
+			`AND memes.date_created BETWEEN '${fromYear}/01/01' AND '${toYear}/12/31 23:59:59' ` +
 		'GROUP BY users.id')).rows;
 }
 
@@ -186,16 +193,33 @@ export async function getUpvotesReceived(fromYear = 2000, toYear = new Date().ge
 		'GROUP BY users.id')).rows;
 }
 
-export async function getMemeStats(user?: string, fromYear = 2000, toYear = new Date().getUTCFullYear()) {
+export async function getMemeStats(serverId?: string, user?: string, fromYear = 2000, toYear = new Date().getUTCFullYear()) {
 	return (await pool.query<MemeStats>(
-		'SELECT users.user_id, COUNT(*) ' +
+		'SELECT users.user_id, COUNT(memes.id) AS posted, COUNT(CASE WHEN archived THEN 1 END) AS archived, COUNT(CASE WHEN rejected THEN 1 END) AS rejected ' +
+		'FROM servers ' +
+		`INNER JOIN channels ON server = (SELECT id FROM servers where server_id = '${serverId}' LIMIT 1) ` +
+		'INNER JOIN memes ON channel = channels.id ' +
+			`AND memes.date_created BETWEEN '${fromYear}/01/01' AND '${toYear}/12/31 23:59:59' ` +
+		'INNER JOIN users ON author = users.id ' +
+		`${user ? 'WHERE users.user_id = \'' + user + '\' ' : ''}` +
 		'GROUP BY users.user_id'
 	)).rows;
 }
 
 export async function getLastChannelMemeId(channelId: string) {
-	return (await pool.query<{msg_id: string}>('SELECT msg_id FROM memes ' +
+	return (await pool.query<{msg_id: string}>(
+		'SELECT msg_id FROM memes ' +
 		`WHERE channel = (SELECT id FROM channels WHERE channel_id = '${channelId}' LIMIT 1) ` +
 		'AND early = FALSE ' +
 		'ORDER BY date_created DESC LIMIT 1')).rows[0]?.msg_id;
+}
+
+export async function getServerMemberCount(serverId?: string) {
+	return (await pool.query<{count: number}>(
+		'SELECT COUNT(*) AS count FROM servers ' +
+		'INNER JOIN users_servers ON server.id = servers.id ' +
+		'INNER JOIN users ON users.id = users_servers.user' +
+		`${serverId ? `WHERE servers.server_id = '${serverId}'` : ''}` +
+		'GROUP BY servers.server_id'
+	)).rows;
 }

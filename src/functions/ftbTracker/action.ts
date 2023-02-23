@@ -32,7 +32,7 @@ export class FtbShowAndEditCommand implements SlashCommand {
 						}).map(dbRow => {
 							const user = guild.members.cache.get(dbRow.user_id);
 							if (user)
-								return `${user.displayName}: ${dbRow.ftbPoints}`;
+								return `${user.displayName}: ${dbRow.total}`;
 						}).join('\n')
 					}
 				]

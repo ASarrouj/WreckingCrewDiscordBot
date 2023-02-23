@@ -29,7 +29,7 @@ export interface DbMeme {
 
 export interface FtbSum {
     user_id: string,
-    ftbPoints: number
+    total: number
 }
 
 export interface UpvotesReceived {
@@ -44,8 +44,8 @@ export interface UpvotesGiven {
 
 export interface MemeStats {
     user_id: string,
-    memes_posted: number,
-    memes_archived: number,
-    memes_rejected: number,
+    posted: number,
+    archived: number,
+    rejected: number,
     avg_upvotes: number
 }

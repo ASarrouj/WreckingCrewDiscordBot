@@ -12,7 +12,7 @@ export class StatsCommand implements SlashCommand {
 	async respond(payload: CommandInteraction): Promise<InteractionReplyOptions> {
 		const user = payload.options.getUser('user');
 
-		const memeData = await getMemeStats(user?.id);
+		const memeData = await getMemeStats(payload.guild?.id, user?.id);
 
 		return {
 			embeds: memeData.map(userData => {
@@ -26,27 +26,27 @@ export class StatsCommand implements SlashCommand {
 					fields: [
 						{
 							name: 'Memes Posted',
-							value: userData.memes_posted.toString(),
+							value: userData.posted.toString(),
 							inline: true
 						},
 						{
 							name: 'Memes Archived',
-							value: userData.memes_archived.toString(),
+							value: userData.archived.toString(),
 							inline: true
 						},
 						{
 							name: 'Memes Rejected',
-							value: userData.memes_rejected.toString(),
+							value: userData.rejected.toString(),
 							inline: true
 						},
 						{
 							name: 'Meme Archive Rate',
-							value: `${(userData.memes_archived / userData.memes_posted * 100).toFixed(2)}%`,
+							value: `${(userData.archived / userData.posted * 100).toFixed(2)}%`,
 							inline: true
 						},
 						{
 							name: 'Avg Upvotes',
-							value: userData.avg_upvotes.toFixed(2),
+							value: 'In Development'/*userData.avg_upvotes.toFixed(2)*/,
 							inline: true
 						}
 					]

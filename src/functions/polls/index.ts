@@ -4,7 +4,6 @@ import {
 	InteractionReplyOptions,
 	Message, ActionRowBuilder,
 	ButtonBuilder,
-	EmbedBuilder,
 	ButtonStyle,
 	MessageActionRowComponentBuilder,
 	ChatInputCommandInteraction,
@@ -90,7 +89,7 @@ export class PollCommand implements SlashCommand {
 		const pollEmbed = {
 			author: {
 				name: author.displayName,
-				iconURL: author.user.avatarURL()!,
+				iconURL: author.user.avatarURL(),
 			},
 			title: question,
 			description: 'Vote on this poll by clicking on the button of the option you want to vote for.',
@@ -125,7 +124,7 @@ export class PollCommand implements SlashCommand {
 
 		return {
 			embeds: [
-				this.updateResponseEmbed(pollEmbed, guild),
+				this.generateTallyEmbed(pollEmbed, guild),
 			],
 			components: rows,
 		};
@@ -135,6 +134,7 @@ export class PollCommand implements SlashCommand {
 		const pollDuration = this.pollHours * 60 * 60 * 1000;
 
 		const collector = responseMsg.createMessageComponentCollector({ componentType: ComponentType.Button, time: pollDuration });
+		const guild = responseMsg.guild;
 
 		collector.on('collect', async interaction => {
 			if ((interaction.component as ButtonComponent).emoji!.name != XEmoji.emoji) {
@@ -148,7 +148,7 @@ export class PollCommand implements SlashCommand {
 
 				this.pollVotes[(interaction.component as ButtonComponent).emoji!.name!].push(interaction.user.id);
 
-				const clonedEmbeds = this.updateResponseEmbed(new EmbedBuilder(interaction.message.embeds[0].toJSON()).data, interaction.guild!);
+				const clonedEmbeds = this.generateTallyEmbed(interaction.message.embeds[0].toJSON(), guild);
 
 				await interaction.update({
 					embeds: [clonedEmbeds],
@@ -169,18 +169,18 @@ export class PollCommand implements SlashCommand {
 
 		collector.on('end', async (collected, reason) => {
 			if (reason !== 'messageDelete') {
-				const embedClone = new EmbedBuilder(responseMsg.embeds[0].data);
+				const embedClone = this.generateTallyEmbed(responseMsg.embeds[0].toJSON(), guild);
 				const lastButtonPress = collected.last();
 
 				if (lastButtonPress && (lastButtonPress.component as ButtonComponent).emoji!.name == XEmoji.emoji && lastButtonPress.user.id === responseMsg.interaction!.user.id) {
-					embedClone.setDescription('The poll was ended early by the author. These are the final results.');
+					embedClone.description = 'The poll was ended early by the author. These are the final results.';
 				}
 				else {
-					embedClone.setDescription('The poll time has expired. Here are the results of the poll.');
+					embedClone.description = 'The poll time has expired. Here are the results of the poll.';
 				}
 
 				await responseMsg.edit({
-					embeds: [embedClone.data],
+					embeds: [embedClone],
 					components: [],
 				});
 
@@ -189,7 +189,7 @@ export class PollCommand implements SlashCommand {
 		});
 	}
 
-	private updateResponseEmbed(embed: APIEmbed, guild: Guild): APIEmbed {
+	private generateTallyEmbed(embed: APIEmbed, guild: Guild | null): APIEmbed {
 		embed.fields = this.choices.reduce((acc, cur, index) => {
 			const numVotes = this.pollVotes[numberEmojis[index].emoji].length;
 			if (index % 3 == 2) {
@@ -202,7 +202,7 @@ export class PollCommand implements SlashCommand {
 			acc.push({
 				name: `${numberEmojis[index].text}  ${numVotes} ${numVotes === 1 ? 'vote' : 'votes'}` +
 					`${numVotes === 0 ? '' : ` (${this.pollVotes[numberEmojis[index].emoji].map(id => {
-						return guild.members.cache.get(id)!.displayName;
+						return guild?.members.cache.get(id)!.displayName;
 					}).join(',')})`}`,
 				value: cur,
 				inline: true

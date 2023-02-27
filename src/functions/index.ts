@@ -1,5 +1,5 @@
 import { BoxOfSandCommand, ChasCommand, GoodBotCommand, PailOfWaterCommand } from './chatting';
-import { Client, CommandInteraction, Message } from 'discord.js';
+import { Client, Message } from 'discord.js';
 import { FtbResetCommand, FtbShowAndEditCommand } from './ftbTracker';
 import { ImageSearchCommand } from './imageSearch';
 import { PollCommand } from './polls';
@@ -59,7 +59,7 @@ export function init(client: Client): void {
 
 	client.on('interactionCreate', async (interaction) => {
 		let interactionName: string;
-		if (interaction instanceof CommandInteraction) {
+		if (interaction.isChatInputCommand()) {
 			interactionName = interaction.commandName.toLowerCase();
 
 			const linkedCommand = slashCommands.get(interactionName)!();
@@ -97,7 +97,7 @@ export function init(client: Client): void {
 				});
 			}
 		}
-		else if (interaction.isMessageContextMenu()) {
+		else if (interaction.isMessageContextMenuCommand()) {
 			interactionName = interaction.commandName.toLowerCase();
 
 			try {

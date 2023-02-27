@@ -1,4 +1,4 @@
-import { Message, MessageAttachment, MessageOptions } from 'discord.js';
+import { Attachment, Message, MessageCreateOptions } from 'discord.js';
 import { idRegex } from '../../helpers';
 
 const siteRegexes = [
@@ -26,7 +26,7 @@ export interface MemeReactionInfo {
 
 export class ArchiveContent {
 	public url?: string;
-	public attachments: MessageAttachment[]
+	public attachments: Attachment[]
 	public caption?: string;
 	public twitterCaption?: string; // Sanitizes Discord Server Names
 	public type: MemeType;
@@ -52,7 +52,7 @@ export class ArchiveContent {
 		});
 	}
 
-	public createMsg(): MessageOptions {
+	public createMsg(): MessageCreateOptions {
 		if (this.type == MemeType.Link) {
 			return { content: this.caption ? `${this.caption} ${this.url}` : this.url };
 		}

@@ -1,7 +1,7 @@
 import {
 	CommandInteraction,
 	InteractionReplyOptions,
-	MessageEmbed,
+	EmbedBuilder,
 } from 'discord.js';
 import { SlashCommand } from '../types';
 import { getMemeStats } from '../../db/queries';
@@ -18,7 +18,7 @@ export class StatsCommand implements SlashCommand {
 			embeds: memeData.map(userData => {
 				const user = payload.guild?.members.cache.get(userData.user_id);
 
-				return new MessageEmbed({
+				return new EmbedBuilder({
 					author: {
 						name: user?.displayName ?? '',
 						iconURL: user?.user.avatarURL() ?? undefined

@@ -5,7 +5,7 @@ import FormData from 'form-data';
 import { ArchiveContent } from '../types';
 import { twitterApiCreds as creds } from '../../../secureConstants.ign';
 import { wait } from '../../../helpers';
-import { MessageAttachment } from 'discord.js';
+import { Attachment } from 'discord.js';
 
 const tweetIdRegex = /(?<=status\/)\d+/;
 const apiUrl = 'https://api.twitter.com/2/';
@@ -211,7 +211,7 @@ const uploadMediaAndPost = async (mediaUrl: string) => {
 	return '';
 };
 
-const uploadMedias = async (attachments: MessageAttachment[]) => {
+const uploadMedias = async (attachments: Attachment[]) => {
 	const ids: string[] = [];
 	await attachments.reduce(async (prev, cur) => {
 		await prev;

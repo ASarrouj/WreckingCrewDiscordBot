@@ -1,14 +1,14 @@
 import { ImageSearcher } from './ImageSearcher';
 import { googleApiCreds } from '../../secureConstants.ign';
 import { SlashCommand } from '../types';
-import { CommandInteraction, InteractionReplyOptions } from 'discord.js';
+import { ChatInputCommandInteraction, InteractionReplyOptions } from 'discord.js';
 const engines = googleApiCreds.map((key) => { return new ImageSearcher(key.cx, key.apiKey); });
 let engineIndex = 0;
 
 export class ImageSearchCommand implements SlashCommand {
 	static commandName = 'showme';
 	DM = true;
-	async respond(payload: CommandInteraction): Promise<InteractionReplyOptions> {
+	async respond(payload: ChatInputCommandInteraction): Promise<InteractionReplyOptions> {
 		let interactionResponse: InteractionReplyOptions;
 		const origQuery = payload.options.getString('query', true);
 		const gifOnly = payload.options.getBoolean('gif');

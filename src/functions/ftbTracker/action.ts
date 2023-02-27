@@ -1,12 +1,15 @@
 import {
-	CommandInteraction,
+	ChatInputCommandInteraction,
 	Guild,
 	GuildMember,
 	InteractionReplyOptions,
 	Message,
-	MessageActionRow,
-	MessageButton,
-	MessageEmbed,
+	ActionRowBuilder,
+	ButtonBuilder,
+	EmbedBuilder,
+	ButtonStyle,
+	MessageActionRowComponentBuilder,
+	ComponentType,
 } from 'discord.js';
 import { getFtbSums, storeFtbTransaction } from '../../db/queries';
 import { SlashCommand } from '../types';
@@ -18,7 +21,7 @@ export class FtbShowAndEditCommand implements SlashCommand {
 	recipient?: GuildMember;
 	reason?: string;
 	subCommand?: string;
-	async respond(payload: CommandInteraction, guild: Guild): Promise<InteractionReplyOptions> {
+	async respond(payload: ChatInputCommandInteraction, guild: Guild): Promise<InteractionReplyOptions> {
 		this.subCommand = payload.options.getSubcommand();
 		if (this.subCommand === 'list') {
 			const userSums = await getFtbSums();
@@ -71,11 +74,11 @@ export class FtbShowAndEditCommand implements SlashCommand {
 			};
 		}
 
-		const row = new MessageActionRow().addComponents(
-			new MessageButton({
+		const row = new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+			new ButtonBuilder({
 				customId: `${FtbShowAndEditCommand.commandName}-approve`,
 				label: 'Approve',
-				style: 'SUCCESS'
+				style: ButtonStyle.Success
 			})
 		);
 
@@ -95,7 +98,7 @@ export class FtbShowAndEditCommand implements SlashCommand {
 			return;
 		}
 		const blocked = [this.recipient?.id, this.author?.id];
-		const collector = responseMsg.createMessageComponentCollector({ componentType: 'BUTTON', time: 60 * 60 * 1000 });
+		const collector = responseMsg.createMessageComponentCollector({ componentType: ComponentType.Button, time: 60 * 60 * 1000 });
 
 		collector.on('collect', async interaction => {
 			if (blocked.includes(interaction.user.id)) {
@@ -114,7 +117,7 @@ export class FtbShowAndEditCommand implements SlashCommand {
 				const lastButtonPress = collected.last();
 				if (this.recipient && lastButtonPress && !blocked.includes(lastButtonPress.user.id)) {
 					await storeFtbTransaction(this.recipient.user.id, this.pointAmt, undefined, this.author?.user.id, this.reason);
-					const newEmbed = new MessageEmbed({
+					const newEmbed = new EmbedBuilder({
 						title: `${this.recipient?.displayName} has received ${this.pointAmt} FTB points.`,
 						description: `${this.author?.displayName}'s reason: ${this.reason ? this.reason : 'Not specified'}`,
 						footer: { text: `Approved by ${(lastButtonPress.member as GuildMember).displayName}` }

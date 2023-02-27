@@ -1,6 +1,6 @@
 import { adminId } from '../../helpers/constants';
 import { ArchiveContent, MemeReactionInfo } from './types';
-import { Guild, Message, MessageEmbed, MessageReaction, TextChannel, User, Collection, MessageActionRow, MessageButton, GuildBasedChannel } from 'discord.js';
+import { Guild, Message, EmbedBuilder, MessageReaction, TextChannel, User, Collection, ActionRowBuilder, ButtonBuilder, GuildBasedChannel, ButtonStyle, ComponentType, MessageActionRowComponentBuilder } from 'discord.js';
 import moment from 'moment';
 import { postMemeToTwitter } from './twitter';
 import { getLastChannelMemeId, storeMeme } from '../../db/queries';
@@ -23,7 +23,7 @@ const XEmoji = {
 };
 
 async function postSuccessfulArchive(msg: Message, archiveContent: ArchiveContent, archiveChannel: TextChannel, yesVoters: string[], memberCount: number, cancelTwitPost: boolean) {
-	const pollEmbed = new MessageEmbed();
+	const pollEmbed = new EmbedBuilder();
 	let description, addedPoints;
 	if (yesVoters.length === memberCount) {
 		description = 'Everybody liked that. 10 ftb points have been awarded for this amazing contribution to the archives.';
@@ -45,7 +45,7 @@ async function postSuccessfulArchive(msg: Message, archiveContent: ArchiveConten
 }
 
 async function postRejectedArchive(msg: Message) {
-	const pollEmbed = new MessageEmbed();
+	const pollEmbed = new EmbedBuilder();
 	pollEmbed.setTitle('Meme Shot Down')
 		.setDescription('A majority of the server has decided this meme is terrible, and thus the author must pay the price.' +
 			' The author has been deducted 5 ftb points for wasting the server\'s time.');
@@ -222,27 +222,27 @@ export class Archiver {
 			const admin = await deletedMsg.guild?.members.fetch(adminId);
 			const adminMsg = await admin?.send({
 				content: `${deletedMsg.member!.displayName} deleted a meme with ${yesVoters.length} upvotes and ${noVoters.length} downvotes. Repost? ${archiveContent.url}`,
-				components: [new MessageActionRow().addComponents(
-					new MessageButton({
+				components: [new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+					new ButtonBuilder({
 						customId: 'MemeRepost-Yes',
 						label: 'Yes',
-						style: 'SUCCESS'
+						style: ButtonStyle.Success
 					}),
-					new MessageButton({
+					new ButtonBuilder({
 						customId: 'MemeRepost-No',
 						label: 'No',
-						style: 'DANGER'
+						style: ButtonStyle.Danger
 					})
 				)]
 			});
 
-			const collector = adminMsg?.createMessageComponentCollector({ componentType: 'BUTTON', time: 60 * 60 * 1000, max: 1 });
+			const collector = adminMsg?.createMessageComponentCollector({ componentType: ComponentType.Button, time: 60 * 60 * 1000, max: 1 });
 
 			collector?.on('collect', async interaction => {
 				await interaction.deferUpdate();
 
 				if (interaction.customId == 'MemeRepost-Yes') {
-					const repostedMsg = await deletedMsg.channel.send({
+					const repostedMsg = await (deletedMsg.channel as TextChannel).send({
 						content: `${deletedMsg.member!.displayName} tried deleting this meme, but luckily I saved it! ` +
 							`Previous upvotes and downvotes were recorded and the meme can still be voted on ${archiveContent.url}`
 					});

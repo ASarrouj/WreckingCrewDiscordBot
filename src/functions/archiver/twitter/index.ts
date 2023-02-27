@@ -52,7 +52,7 @@ export async function postMemeToTwitter(content: ArchiveContent) {
 			await postMediaToTwitter([mediaId], content.twitterCaption);
 		}
 	}
-	else if (/^https:\/\/((.*\.(jpg|jpeg|png|webp|gif|mp4)$)|(pbs\.twimg\.com.*format=(jpg|jpeg|png|webp|gif|mp4)))/.test(content.attachments[0].url)) { // Upload media and tweet it
+	else if (/^https:\/\/((.*\.(jpg|jpeg|png|webp|gif|mp4)$)|(pbs\.twimg\.com.*format=(jpg|jpeg|png|webp|gif|mp4)))/.test(content.attachments?.[0]?.url)) { // Upload media and tweet it
 		const mediaIds = await uploadMedias(content.attachments);
 		if (mediaIds.length > 0) {
 			await postMediaToTwitter(mediaIds, content.twitterCaption);

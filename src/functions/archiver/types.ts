@@ -32,6 +32,7 @@ export class ArchiveContent {
 	public type: MemeType;
 
 	constructor(msg: Message) {
+		console.log(msg)
 		if (msg.attachments.size > 0) {
 			this.attachments = Array.from(msg.attachments.values());
 			this.type = MemeType.Pic;

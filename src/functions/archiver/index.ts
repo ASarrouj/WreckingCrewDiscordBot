@@ -1,6 +1,6 @@
 import { adminId } from '../../helpers/constants';
 import { ArchiveContent, MemeReactionInfo } from './types';
-import { Guild, Message, EmbedBuilder, MessageReaction, TextChannel, User, Collection, ActionRowBuilder, ButtonBuilder, GuildBasedChannel, ButtonStyle, ComponentType, MessageActionRowComponentBuilder } from 'discord.js';
+import { Guild, Message, EmbedBuilder, MessageReaction, TextChannel, User, Collection, ActionRowBuilder, ButtonBuilder, GuildBasedChannel, ButtonStyle, ComponentType, MessageActionRowComponentBuilder, MessageFlags } from 'discord.js';
 import moment from 'moment';
 import { postMemeToTwitter } from './twitter';
 import { getLastChannelMemeId, storeMeme } from '../../db/queries';
@@ -37,7 +37,7 @@ async function postSuccessfulArchive(msg: Message, archiveContent: ArchiveConten
 	pollEmbed.setTitle('Meme Approved')
 		.setDescription(description);
 	await archiveChannel.send(archiveContent.createMsg());
-	await msg.reply({ embeds: [pollEmbed], allowedMentions: { repliedUser: false } });
+	await msg.reply({ embeds: [pollEmbed], allowedMentions: { repliedUser: false }, flags: MessageFlags.SuppressNotifications });
 	if (!cancelTwitPost && process.argv[2] === 'prod')
 		await postMemeToTwitter(archiveContent);
 
@@ -49,7 +49,7 @@ async function postRejectedArchive(msg: Message) {
 	pollEmbed.setTitle('Meme Shot Down')
 		.setDescription('A majority of the server has decided this meme is terrible, and thus the author must pay the price.' +
 			' The author has been deducted 5 ftb points for wasting the server\'s time.');
-	await msg.reply({ embeds: [pollEmbed], allowedMentions: { repliedUser: false } });
+	await msg.reply({ embeds: [pollEmbed], allowedMentions: { repliedUser: false }, flags: MessageFlags.SuppressNotifications });
 
 	return -5;
 }

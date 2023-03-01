@@ -261,7 +261,7 @@ export class Archiver {
 
 	static async reloadMeme(msg: Message, archiveChannel: GuildBasedChannel, memberCount: number) {
 		const archiveContent = new ArchiveContent(msg);
-		if (!archiveContent.isMeme() || msg.member?.user.bot)
+		if (!archiveContent.isMeme() || msg.member?.user.bot || msg.content.includes(XEmoji.emoji) || msg.content.includes(XEmoji.text))
 			return;
 
 		const { yesVoters, noVoters, cancelTwitPost } = await getMemeInfo(msg);

@@ -25,7 +25,7 @@ const XEmoji = {
 async function postSuccessfulArchive(msg: Message, archiveContent: ArchiveContent, archiveChannel: TextChannel, yesVoters: string[], memberCount: number, cancelTwitPost: boolean) {
 	const pollEmbed = new EmbedBuilder();
 	let description, addedPoints;
-	if (yesVoters.length === memberCount) {
+	if (yesVoters.length === memberCount - 1) {
 		description = 'Everybody liked that. 10 ftb points have been awarded for this amazing contribution to the archives.';
 		addedPoints = 10;
 	}

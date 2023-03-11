@@ -44,9 +44,8 @@ export async function storeMeme(userId: string, msg: Message, pointAmount: numbe
 		'RETURNING id;')).rows[0];
 
 	if (meme === undefined) {
-		meme = (await client.query<DbMeme>(
-			`SELECT id FROM memes WHERE msg_id = '${msg.id}'`
-		)).rows[0];
+		client.release();
+		return false;
 	}
 	if (pointAmount !== 0) {
 		await storeFtbTransaction(userId, pointAmount, meme.id, undefined, undefined, client);
@@ -58,6 +57,7 @@ export async function storeMeme(userId: string, msg: Message, pointAmount: numbe
 		await storeDownvotes(downvoters, meme.id, client);
 	}
 	client.release();
+	return true;
 }
 
 export async function storeUpvotes(userIds: string[], meme: number, client?: PoolClient) {

@@ -1,8 +1,9 @@
-import { Message, MessageAttachment, MessageOptions } from 'discord.js';
+import { Attachment, Message, MessageCreateOptions } from 'discord.js';
 import { idRegex } from '../../helpers';
 
 const siteRegexes = [
 	/https:.*(fx)?twitter\.com\/.+\/status[^\s]+/,
+	/https:\/\/x\.com\/.+\/status[^\s]+/,
 	/https:.*youtube\.com\/(watch|shorts)[^\s]+/,
 	/https:.*youtu\.be\/[^\s]+/,
 	/https:.*instagram\.com\/(p|reel)\/[^\s]+/,
@@ -19,23 +20,20 @@ const siteRegexes = [
 ];
 
 export interface MemeReactionInfo {
-	yesCount: number,
-	noCount: number,
-	votedUsers: string[],
+	yesVoters: string[],
+	noVoters: string[],
 	cancelTwitPost: boolean
 }
 
 export class ArchiveContent {
 	public url?: string;
-	public attachments: MessageAttachment[]
+	public attachments: Attachment[]
 	public caption?: string;
 	public twitterCaption?: string; // Sanitizes Discord Server Names
 	public type: MemeType;
 
 	constructor(msg: Message) {
 		if (msg.attachments.size > 0) {
-			// console.log(msg);
-			// console.log(msg.attachments.at(0));
 			this.attachments = Array.from(msg.attachments.values());
 			this.type = MemeType.Pic;
 			this.caption = msg.content || undefined;
@@ -55,7 +53,7 @@ export class ArchiveContent {
 		});
 	}
 
-	public createMsg(): MessageOptions {
+	public createMsg(): MessageCreateOptions {
 		if (this.type == MemeType.Link) {
 			return { content: this.caption ? `${this.caption} ${this.url}` : this.url };
 		}

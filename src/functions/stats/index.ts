@@ -1,11 +1,10 @@
 import {
 	CommandInteraction,
-	GuildMember,
 	InteractionReplyOptions,
-	MessageEmbed,
+	EmbedBuilder,
 } from 'discord.js';
 import { SlashCommand } from '../types';
-import { createOrGetFtbEntry } from '../ftbTracker';
+import { getMemeStats } from '../../db/queries';
 
 export class StatsCommand implements SlashCommand {
 	static commandName = 'stats';
@@ -13,55 +12,46 @@ export class StatsCommand implements SlashCommand {
 	async respond(payload: CommandInteraction): Promise<InteractionReplyOptions> {
 		const user = payload.options.getUser('user');
 
-		const embeds:MessageEmbed[] = [];
-		if (user) {
-			embeds.push(createStatEmbed(payload.guild!.members.cache.get(user.id)!));
-		}
-		else {
-			await Promise.all(payload.guild!.members.cache.filter(member => !member.user.bot).each(member => {
-				embeds.push(createStatEmbed(member));
-			}));
-		}
+		const memeData = await getMemeStats(payload.guild?.id, user?.id);
 
 		return {
-			embeds
+			embeds: memeData.map(userData => {
+				const user = payload.guild?.members.cache.get(userData.user_id);
+
+				return new EmbedBuilder({
+					author: {
+						name: user?.displayName ?? '',
+						iconURL: user?.user.avatarURL() ?? undefined
+					},
+					fields: [
+						{
+							name: 'Memes Posted',
+							value: userData.posted.toString(),
+							inline: true
+						},
+						{
+							name: 'Memes Archived',
+							value: userData.archived.toString(),
+							inline: true
+						},
+						{
+							name: 'Memes Rejected',
+							value: userData.rejected.toString(),
+							inline: true
+						},
+						{
+							name: 'Meme Archive Rate',
+							value: `${(userData.archived / userData.posted * 100).toFixed(2)}%`,
+							inline: true
+						},
+						{
+							name: 'Avg Upvotes',
+							value: 'In Development'/*userData.avg_upvotes.toFixed(2)*/,
+							inline: true
+						}
+					]
+				});
+			})
 		};
 	}
-}
-
-function createStatEmbed(user: GuildMember) {
-	const ftbEntry = createOrGetFtbEntry(user);
-	return new MessageEmbed({
-		author: {
-			name: user.displayName,
-			iconURL: user.user.avatarURL()!
-		},
-		fields: [
-			{
-				name: 'Memes Posted',
-				value: String(ftbEntry.memesPosted),
-				inline: true
-			},
-			{
-				name: 'Memes Archived',
-				value: String(ftbEntry.memesArchived),
-				inline: true
-			},
-			{
-				name: 'Memes Rejected',
-				value: String(ftbEntry.memesRejected),
-				inline: true
-			},
-			{
-				name: 'Meme Archive Rate',
-				value: `${String((ftbEntry.memesArchived / ftbEntry.memesPosted * 100).toFixed(2))}%`,
-				inline: true
-			},
-			{
-				name: 'Avg Upvotes',
-				value: String((ftbEntry.upVotes / ftbEntry.memesPosted).toFixed(2)),
-				inline: true
-			}
-		]
-	});
 }

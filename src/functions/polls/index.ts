@@ -1,14 +1,18 @@
 import {
-	CommandInteraction,
 	EmbedField,
 	Guild,
 	InteractionReplyOptions,
-	Message, MessageActionRow,
-	MessageButton,
-	MessageEmbed,
-	MessageEmbedOptions
+	Message, ActionRowBuilder,
+	ButtonBuilder,
+	ButtonStyle,
+	MessageActionRowComponentBuilder,
+	ChatInputCommandInteraction,
+	ComponentType,
+	ActionRow,
+	MessageActionRowComponent,
+	ButtonComponent,
+	APIEmbed
 } from 'discord.js';
-import lodash from 'lodash';
 import { SlashCommand } from '../types';
 
 const numberEmojis = [
@@ -56,7 +60,7 @@ export class PollCommand implements SlashCommand {
 	private pollHours = 1;
 	private pollVotes: { [key: string]: string[] } = {};
 	private choices: string[] = ["Option1", "Option2"];
-	async respond(payload: CommandInteraction, guild: Guild): Promise<InteractionReplyOptions> {
+	async respond(payload: ChatInputCommandInteraction, guild: Guild): Promise<InteractionReplyOptions> {
 		let question = payload.options.getString('question', true);
 		this.choices = payload.options.data.filter(option => {
 			return option.name.includes('choice');
@@ -85,7 +89,7 @@ export class PollCommand implements SlashCommand {
 		const pollEmbed = {
 			author: {
 				name: author.displayName,
-				iconURL: author.user.avatarURL()!,
+				iconURL: author.user.avatarURL(),
 			},
 			title: question,
 			description: 'Vote on this poll by clicking on the button of the option you want to vote for.',
@@ -94,33 +98,33 @@ export class PollCommand implements SlashCommand {
 			}
 		};
 
-		const rows: MessageActionRow[] = [];
+		const rows: ActionRowBuilder<MessageActionRowComponentBuilder>[] = [];
 		let curRow;
 		for (let i = 0; i < this.choices.length; i++) {
 			if (i % 5 == 0) {
-				curRow = new MessageActionRow();
+				curRow = new ActionRowBuilder<MessageActionRowComponentBuilder>();
 				rows.push(curRow);
 			}
-			curRow?.addComponents(new MessageButton({
+			curRow?.addComponents(new ButtonBuilder({
 				customId: `poll-button-${i}`,
-				style: 'PRIMARY',
+				style: ButtonStyle.Primary,
 				emoji: numberEmojis[i].emoji,
 			}));
 		}
 
 		if (this.choices.length % 5 === 0) {
-			curRow = new MessageActionRow();
+			curRow = new ActionRowBuilder<MessageActionRowComponentBuilder>();
 			rows.push(curRow);
 		}
-		curRow?.addComponents(new MessageButton({
+		curRow?.addComponents(new ButtonBuilder({
 			customId: `${PollCommand.commandName}-button`,
-			style: 'DANGER',
+			style: ButtonStyle.Danger,
 			emoji: XEmoji.emoji,
 		}));
 
 		return {
 			embeds: [
-				this.updateResponseEmbed(pollEmbed, guild),
+				this.generateTallyEmbed(pollEmbed, guild),
 			],
 			components: rows,
 		};
@@ -129,10 +133,11 @@ export class PollCommand implements SlashCommand {
 	async followup(responseMsg: Message): Promise<void> {
 		const pollDuration = this.pollHours * 60 * 60 * 1000;
 
-		const collector = responseMsg.createMessageComponentCollector({ componentType: 'BUTTON', time: pollDuration });
+		const collector = responseMsg.createMessageComponentCollector({ componentType: ComponentType.Button, time: pollDuration });
+		const guild = responseMsg.guild;
 
 		collector.on('collect', async interaction => {
-			if ((interaction.component as MessageButton).emoji!.name != XEmoji.emoji) {
+			if ((interaction.component as ButtonComponent).emoji!.name != XEmoji.emoji) {
 				for (const key in this.pollVotes) {
 					const optionVoters = this.pollVotes[key];
 					if (optionVoters.includes(interaction.user.id)) {
@@ -141,13 +146,13 @@ export class PollCommand implements SlashCommand {
 					}
 				}
 
-				this.pollVotes[(interaction.component as MessageButton).emoji!.name!].push(interaction.user.id);
+				this.pollVotes[(interaction.component as ButtonComponent).emoji!.name!].push(interaction.user.id);
 
-				const clonedEmbeds = this.updateResponseEmbed(lodash.cloneDeep(interaction.message.embeds[0]) as MessageEmbed, interaction.guild!);
+				const clonedEmbeds = this.generateTallyEmbed(interaction.message.embeds[0].toJSON(), guild);
 
 				await interaction.update({
 					embeds: [clonedEmbeds],
-					components: interaction.message.components as MessageActionRow[]
+					components: interaction.message.components as ActionRow<MessageActionRowComponent>[]
 				});
 				return;
 			}
@@ -164,18 +169,18 @@ export class PollCommand implements SlashCommand {
 
 		collector.on('end', async (collected, reason) => {
 			if (reason !== 'messageDelete') {
-				const embedClone = lodash.cloneDeep(responseMsg.embeds) as MessageEmbed[];
+				const embedClone = this.generateTallyEmbed(responseMsg.embeds[0].toJSON(), guild);
 				const lastButtonPress = collected.last();
 
-				if (lastButtonPress && (lastButtonPress.component as MessageButton).emoji!.name == XEmoji.emoji && lastButtonPress.user.id === responseMsg.interaction!.user.id) {
-					embedClone[0].description = 'The poll was ended early by the author. These are the final results.';
+				if (lastButtonPress && (lastButtonPress.component as ButtonComponent).emoji!.name == XEmoji.emoji && lastButtonPress.user.id === responseMsg.interaction!.user.id) {
+					embedClone.description = 'The poll was ended early by the author. These are the final results.';
 				}
 				else {
-					embedClone[0].description = 'The poll time has expired. Here are the results of the poll.';
+					embedClone.description = 'The poll time has expired. Here are the results of the poll.';
 				}
 
 				await responseMsg.edit({
-					embeds: embedClone,
+					embeds: [embedClone],
 					components: [],
 				});
 
@@ -184,7 +189,7 @@ export class PollCommand implements SlashCommand {
 		});
 	}
 
-	private updateResponseEmbed(embed: MessageEmbedOptions | MessageEmbed, guild: Guild): MessageEmbedOptions | MessageEmbed {
+	private generateTallyEmbed(embed: APIEmbed, guild: Guild | null): APIEmbed {
 		embed.fields = this.choices.reduce((acc, cur, index) => {
 			const numVotes = this.pollVotes[numberEmojis[index].emoji].length;
 			if (index % 3 == 2) {
@@ -197,7 +202,7 @@ export class PollCommand implements SlashCommand {
 			acc.push({
 				name: `${numberEmojis[index].text}  ${numVotes} ${numVotes === 1 ? 'vote' : 'votes'}` +
 					`${numVotes === 0 ? '' : ` (${this.pollVotes[numberEmojis[index].emoji].map(id => {
-						return guild.members.cache.get(id)!.displayName;
+						return guild?.members.cache.get(id)!.displayName;
 					}).join(',')})`}`,
 				value: cur,
 				inline: true

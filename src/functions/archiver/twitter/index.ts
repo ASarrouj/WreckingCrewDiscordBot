@@ -5,7 +5,7 @@ import FormData from 'form-data';
 import { ArchiveContent } from '../types';
 import { twitterApiCreds as creds } from '../../../secureConstants.ign';
 import { wait } from '../../../helpers';
-import { MessageAttachment } from 'discord.js';
+import { Attachment } from 'discord.js';
 
 const tweetIdRegex = /(?<=status\/)\d+/;
 const apiUrl = 'https://api.twitter.com/2/';
@@ -40,7 +40,8 @@ export async function postMemeToTwitter(content: ArchiveContent) {
 			};
 		}
 		try {
-			await axios.post(request.url, request.body, { headers: await getOauthSignatureForRequest(request) });
+			// DISABLED SINCE TWITTER FREE TIER NO LONGER SUPPORTS RTs
+			// await axios.post(request.url, request.body, { headers: await getOauthSignatureForRequest(request) });
 		}
 		catch (e) {
 			console.error(`Error with twitter retweeting: ${(e as any).response.data.errors}`);
@@ -52,7 +53,7 @@ export async function postMemeToTwitter(content: ArchiveContent) {
 			await postMediaToTwitter([mediaId], content.twitterCaption);
 		}
 	}
-	else if (/^https:\/\/((.*\.(jpg|jpeg|png|webp|gif|mp4)$)|(pbs\.twimg\.com.*format=(jpg|jpeg|png|webp|gif|mp4)))/.test(content.attachments[0].url)) { // Upload media and tweet it
+	else if (/^https:\/\/((.*\.(jpg|jpeg|png|webp|gif|mp4)$)|(pbs\.twimg\.com.*format=(jpg|jpeg|png|webp|gif|mp4)))/.test(content.attachments?.[0]?.url)) { // Upload media and tweet it
 		const mediaIds = await uploadMedias(content.attachments);
 		if (mediaIds.length > 0) {
 			await postMediaToTwitter(mediaIds, content.twitterCaption);
@@ -211,7 +212,7 @@ const uploadMediaAndPost = async (mediaUrl: string) => {
 	return '';
 };
 
-const uploadMedias = async (attachments: MessageAttachment[]) => {
+const uploadMedias = async (attachments: Attachment[]) => {
 	const ids: string[] = [];
 	await attachments.reduce(async (prev, cur) => {
 		await prev;

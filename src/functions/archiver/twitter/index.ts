@@ -40,7 +40,8 @@ export async function postMemeToTwitter(content: ArchiveContent) {
 			};
 		}
 		try {
-			await axios.post(request.url, request.body, { headers: await getOauthSignatureForRequest(request) });
+			// DISABLED SINCE TWITTER FREE TIER NO LONGER SUPPORTS RTs
+			// await axios.post(request.url, request.body, { headers: await getOauthSignatureForRequest(request) });
 		}
 		catch (e) {
 			console.error(`Error with twitter retweeting: ${(e as any).response.data.errors}`);

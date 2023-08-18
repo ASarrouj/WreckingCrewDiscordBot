@@ -3,6 +3,7 @@ import { idRegex } from '../../helpers';
 
 const siteRegexes = [
 	/https:.*(fx)?twitter\.com\/.+\/status[^\s]+/,
+	/https:\/\/x\.com\/.+\/status[^\s]+/,
 	/https:.*youtube\.com\/(watch|shorts)[^\s]+/,
 	/https:.*youtu\.be\/[^\s]+/,
 	/https:.*instagram\.com\/(p|reel)\/[^\s]+/,
@@ -32,7 +33,6 @@ export class ArchiveContent {
 	public type: MemeType;
 
 	constructor(msg: Message) {
-		console.log(msg)
 		if (msg.attachments.size > 0) {
 			this.attachments = Array.from(msg.attachments.values());
 			this.type = MemeType.Pic;

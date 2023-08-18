@@ -11,6 +11,8 @@ import { SlashCommand } from './types';
 import { adminId } from '../helpers';
 import { StatsCommand } from './stats';
 import { getServerMemberCount, storeNewServers, storeNewUsers } from '../db/queries';
+import { postMemeToTwitter } from './archiver/twitter'
+import { ArchiveContent } from './archiver/types';
 
 // eslint-disable-next-line @typescript-eslint/no-extra-parens
 const slashCommands = new Map<string, () => SlashCommand>([
@@ -102,38 +104,47 @@ export function init(client: Client): void {
 
 			try {
 				switch (interactionName) {
-				case 'create archive': {
-					const archiveChannel = interaction.guild?.channels.cache.find(channel => {
-						return channel.name == 'the-archives';
-					});
-					if (archiveChannel) {
-						await Archiver.reloadMeme(interaction.targetMessage as Message, archiveChannel, extraGuildInfo[interaction.guildId ?? ''].memberCount);
+					case 'create archive': {
+						const archiveChannel = interaction.guild?.channels.cache.find(channel => {
+							return channel.name == 'the-archives';
+						});
+						if (archiveChannel) {
+							await Archiver.reloadMeme(interaction.targetMessage as Message, archiveChannel, extraGuildInfo[interaction.guildId ?? ''].memberCount);
+							await interaction.reply({
+								content: `Archiving has been initiated on message id ${interaction.targetMessage.id}.`,
+								ephemeral: true
+							});
+						}
+						else {
+							await interaction.reply({
+								content: 'This server has no archive channel.',
+								ephemeral: true
+							});
+						}
+						break;
+					}
+					case 'tweet meme': {
+						const content = new ArchiveContent(interaction.targetMessage)
+						await postMemeToTwitter(content);
 						await interaction.reply({
-							content: `Archiving has been initiated on message id ${interaction.targetMessage.id}.`,
+							content: 'Meme has been tweeted',
 							ephemeral: true
 						});
+						break;
 					}
-					else {
+					default: {
 						await interaction.reply({
-							content: 'This server has no archive channel.',
-							ephemeral: true
+							content: 'The logic for this context menu has not yet been implemented.',
+							ephemeral: true,
 						});
 					}
-					break;
-				}
-				default: {
-					await interaction.reply({
-						content: 'The logic for this context menu has not yet been implemented.',
-						ephemeral: true,
-					});
-				}
 				}
 			}
 			catch (e) {
 				console.error(`Error with context menu ${interactionName}\n`);
 				console.error(e);
 				client.users.fetch(adminId).then(user => {
-					user.send(`Error with slash command ${interactionName}`);
+					user.send(`Error with context menu ${interactionName}`);
 				});
 			}
 		}

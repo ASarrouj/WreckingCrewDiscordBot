@@ -226,7 +226,8 @@ export class Archiver {
 		if ((deletedMsg.channel as TextChannel).topic?.includes('#archivable') &&
 			archiveContent.isMeme() && !deletedMsg.member?.user.bot &&
 			!(deletedMsg.content.includes(XEmoji.emoji) || deletedMsg.content.includes(XEmoji.text)) &&
-			moment(deletedMsg.createdTimestamp, 'x').isSameOrAfter(moment().subtract(1, 'days'))) {
+			moment(deletedMsg.createdTimestamp, 'x').isSameOrAfter(moment().subtract(1, 'days')) &&
+			moment(deletedMsg.createdTimestamp, 'x').isSameOrBefore(moment().subtract(5, 'minutes'))) {
 			const { yesVoters, noVoters, cancelTwitPost } = await getMemeInfo(deletedMsg);
 
 			const admin = await deletedMsg.guild?.members.fetch(adminId);

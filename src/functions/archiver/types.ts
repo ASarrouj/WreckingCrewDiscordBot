@@ -16,7 +16,8 @@ const siteRegexes = [
 	/https:.*theonion\.com\/[^\s]+/,
 	/https:.*i\.kym-cdn\.com\/photos\/images\/[^\s]+/,
 	/https:.*clips\.twitch\.tv\/[^\s]+/,
-	/https:.*(i\.)?imgur\.com\/[^\s]+/
+	/https:.*(i\.)?imgur\.com\/[^\s]+/,
+	/https:.*threads\..+\/post\/.+/
 ];
 
 export interface MemeReactionInfo {

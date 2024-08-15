@@ -1,0 +1,12 @@
+{
+    "name": "awards",
+    "description": "Lists memes awards for a given year",
+    "options": [
+        {
+            "name": "year",
+            "description": "The year to get the awards for",
+            "type": 4,
+            "required": true
+        }
+    ]
+}

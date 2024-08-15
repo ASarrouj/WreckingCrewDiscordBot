@@ -173,24 +173,28 @@ export async function getFtbSums(fromYear = 2000, toYear = new Date().getUTCFull
 		'GROUP BY users.id')).rows;
 }
 
-export async function getUpvotesGiven(fromYear = 2000, toYear = new Date().getUTCFullYear()) {
+export async function getTopUpvotesGiven(serverId: string, fromYear = 2000, toYear = new Date().getUTCFullYear()) {
 	return (await pool.query<UpvotesGiven>(
 		'SELECT users.user_id, COUNT(*) as upvotes_given ' +
 		'FROM users ' +
 		'INNER JOIN upvotes ON users.id = upvotes.user ' +
-		'INNER JOIN memes ON upvotes.meme = memes.id' +
+		'INNER JOIN memes ON upvotes.meme = memes.id ' +
 			`AND memes.date_created BETWEEN '${fromYear}/01/01' AND '${toYear}/12/31 23:59:59' ` +
-		'GROUP BY users.id')).rows;
+		'INNER JOIN channels ON channels.id = channel ' +
+		`INNER JOIN servers ON server = (SELECT id FROM servers where server_id = '${serverId}' LIMIT 1) ` +
+		'GROUP BY users.id ORDER BY upvotes_given DESC LIMIT 3')).rows;
 }
 
-export async function getUpvotesReceived(fromYear = 2000, toYear = new Date().getUTCFullYear()) {
+export async function getTopUpvotesReceived(serverId: string, fromYear = 2000, toYear = new Date().getUTCFullYear()) {
 	return (await pool.query<UpvotesReceived>(
 		'SELECT users.user_id, COUNT(*) as upvotes_received ' +
 		'FROM users ' +
 		'INNER JOIN memes ON users.id = memes.author ' +
-			`AND memes.date_created BETWEEN '${fromYear}/01/01' AND '${toYear}/12/31 23:59:59'` +
-		'INNER JOIN upvotes ON upvotes.meme = memes.id' +
-		'GROUP BY users.id')).rows;
+			`AND memes.date_created BETWEEN '${fromYear}/01/01' AND '${toYear}/12/31 23:59:59' ` +
+		'INNER JOIN upvotes ON upvotes.meme = memes.id ' +
+		'INNER JOIN channels ON channels.id = channel ' +
+		`INNER JOIN servers ON server = (SELECT id FROM servers where server_id = '${serverId}' LIMIT 1) ` +
+		'GROUP BY users.id ORDER BY upvotes_received DESC LIMIT 3')).rows;
 }
 
 export async function getMemeStats(serverId?: string, user?: string, fromYear = 2000, toYear = new Date().getUTCFullYear()) {

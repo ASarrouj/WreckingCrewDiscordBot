@@ -1,5 +1,7 @@
 import { Attachment, Message, MessageCreateOptions } from 'discord.js';
 import { idRegex } from '../../helpers';
+import { join } from 'path'
+import * as fs from 'fs';
 
 const siteRegexes = [
 	/https:.*(fx)?twitter\.com\/.+\/status[^\s]+/,
@@ -16,8 +18,12 @@ const siteRegexes = [
 	/https:.*theonion\.com\/[^\s]+/,
 	/https:.*i\.kym-cdn\.com\/photos\/images\/[^\s]+/,
 	/https:.*clips\.twitch\.tv\/[^\s]+/,
-	/https:.*(i\.)?imgur\.com\/[^\s]+/
+	/https:.*(i\.)?imgur\.com\/[^\s]+/,
+	/https:.*threads\..+\/post\/.+/,
+	/https:.*bsky\.app\/profile\/.+\/post\/[^\s]+/
 ];
+
+const tmpFolder = join(__dirname, '..', '..', '..', 'tmp')
 
 export interface MemeReactionInfo {
 	yesVoters: string[],
@@ -53,11 +59,14 @@ export class ArchiveContent {
 		});
 	}
 
-	public createMsg(): MessageCreateOptions {
+	public async createMsg(): Promise<MessageCreateOptions> {
 		if (this.type == MemeType.Link) {
 			return { content: this.caption ? `${this.caption} ${this.url}` : this.url };
 		}
-		return { content: this.caption, files: this.attachments };
+		const files = await Promise.all(this.attachments.map(async attachment => {
+			return (await (await fetch(new URL(attachment.url))).blob()).arrayBuffer()
+		}))
+		return { content: this.caption, files: files.map(file => Buffer.from(file)) };
 	}
 
 	public isMeme() {

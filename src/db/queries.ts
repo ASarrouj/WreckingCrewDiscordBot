@@ -1,7 +1,7 @@
 import { Collection, Guild, GuildMember, Message, TextChannel } from 'discord.js';
 import { PoolClient } from 'pg';
 import { pool, insQueryHelper } from '.';
-import { DbChannel, FtbSum, DbMeme, UpvotesReceived, UpvotesGiven, MemeStats } from './types';
+import { DbChannel, FtbSum, DbMeme, UpvotesReceived, UpvotesGiven, MemeStats, DownvotesReceived } from './types';
 
 export function resetFtbPoints(user: GuildMember, pointAmount: number): string {
 	return 'This command is currently disabled.';
@@ -173,35 +173,51 @@ export async function getFtbSums(fromYear = 2000, toYear = new Date().getUTCFull
 		'GROUP BY users.id')).rows;
 }
 
-export async function getUpvotesGiven(fromYear = 2000, toYear = new Date().getUTCFullYear()) {
+export async function getTopUpvotesGiven(serverId: string, fromYear = 2000, toYear = new Date().getUTCFullYear()) {
 	return (await pool.query<UpvotesGiven>(
-		'SELECT users.user_id, COUNT(*) as upvotes_given ' +
+		'SELECT users.user_id, COUNT(*)::int as upvotes_given ' +
 		'FROM users ' +
 		'INNER JOIN upvotes ON users.id = upvotes.user ' +
-		'INNER JOIN memes ON upvotes.meme = memes.id' +
+		'INNER JOIN memes ON upvotes.meme = memes.id ' +
 			`AND memes.date_created BETWEEN '${fromYear}/01/01' AND '${toYear}/12/31 23:59:59' ` +
-		'GROUP BY users.id')).rows;
+		'INNER JOIN channels ON channels.id = channel ' +
+			`AND server = (SELECT id FROM servers where server_id = '${serverId}' LIMIT 1) ` +
+		'GROUP BY users.id ORDER BY upvotes_given DESC LIMIT 3')).rows;
 }
 
-export async function getUpvotesReceived(fromYear = 2000, toYear = new Date().getUTCFullYear()) {
+export async function getTopUpvotesReceived(serverId: string, fromYear = 2000, toYear = new Date().getUTCFullYear()) {
 	return (await pool.query<UpvotesReceived>(
-		'SELECT users.user_id, COUNT(*) as upvotes_received ' +
+		'SELECT users.user_id, COUNT(*)::int as upvotes_received ' +
 		'FROM users ' +
 		'INNER JOIN memes ON users.id = memes.author ' +
-			`AND memes.date_created BETWEEN '${fromYear}/01/01' AND '${toYear}/12/31 23:59:59'` +
-		'INNER JOIN upvotes ON upvotes.meme = memes.id' +
-		'GROUP BY users.id')).rows;
+			`AND memes.date_created BETWEEN '${fromYear}/01/01' AND '${toYear}/12/31 23:59:59' ` +
+		'INNER JOIN upvotes ON upvotes.meme = memes.id ' +
+		'INNER JOIN channels ON channels.id = channel ' +
+			`AND server = (SELECT id FROM servers where server_id = '${serverId}' LIMIT 1) ` +
+		'GROUP BY users.id ORDER BY upvotes_received DESC LIMIT 3')).rows;
+}
+
+export async function getTopDownvotesReceived(serverId: string, fromYear = 2000, toYear = new Date().getUTCFullYear()) {
+	return (await pool.query<DownvotesReceived>(
+		'SELECT users.user_id, COUNT(*)::int as downvotes_received ' +
+		'FROM users ' +
+		'INNER JOIN memes ON users.id = memes.author ' +
+			`AND memes.date_created BETWEEN '${fromYear}/01/01' AND '${toYear}/12/31 23:59:59' ` +
+		'INNER JOIN downvotes ON downvotes.meme = memes.id ' +
+		'INNER JOIN channels ON channels.id = channel ' +
+			`AND server = (SELECT id FROM servers where server_id = '${serverId}' LIMIT 1) ` +
+		'GROUP BY users.id ORDER BY downvotes_received DESC LIMIT 3')).rows;
 }
 
 export async function getMemeStats(serverId?: string, user?: string, fromYear = 2000, toYear = new Date().getUTCFullYear()) {
 	return (await pool.query<MemeStats>(
-		'SELECT users.user_id, COUNT(memes.id) AS posted, COUNT(CASE WHEN archived THEN 1 END) AS archived, COUNT(CASE WHEN rejected THEN 1 END) AS rejected ' +
-		'FROM servers ' +
-		`INNER JOIN channels ON server = (SELECT id FROM servers where server_id = '${serverId}' LIMIT 1) ` +
+		'SELECT users.user_id, COUNT(memes.id)::int AS posted, COUNT(CASE WHEN archived THEN 1 END)::int AS archived, COUNT(CASE WHEN rejected THEN 1 END)::int AS rejected ' +
+		'FROM channels ' +
 		'INNER JOIN memes ON channel = channels.id ' +
 			`AND memes.date_created BETWEEN '${fromYear}/01/01' AND '${toYear}/12/31 23:59:59' ` +
 		'INNER JOIN users ON author = users.id ' +
-		`${user ? 'WHERE users.user_id = \'' + user + '\' ' : ''}` +
+		`${user ? 'WHERE users.user_id = \'' + user + '\' ' : ''} ` +
+		`WHERE server = (SELECT id FROM servers where server_id = '${serverId}' LIMIT 1) ` +
 		'GROUP BY users.user_id'
 	)).rows;
 }
@@ -218,8 +234,8 @@ export async function getServerMemberCount(serverId?: string) {
 	return (await pool.query<{count: number}>(
 		'SELECT COUNT(*) AS count FROM servers ' +
 		'INNER JOIN users_servers ON server.id = servers.id ' +
-		'INNER JOIN users ON users.id = users_servers.user' +
-		`${serverId ? `WHERE servers.server_id = '${serverId}'` : ''}` +
+		'INNER JOIN users ON users.id = users_servers.user ' +
+		`${serverId ? `WHERE servers.server_id = '${serverId}'` : ''} ` +
 		'GROUP BY servers.server_id'
 	)).rows;
 }

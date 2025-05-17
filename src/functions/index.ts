@@ -9,7 +9,7 @@ import { ChatFilter } from './chatFilter';
 import { Archiver } from './archiver';
 import { SlashCommand } from './types';
 import { adminId } from '../helpers';
-import { StatsCommand } from './stats';
+import { StatsCommand, AwardsCommand } from './stats';
 import { getServerMemberCount, storeNewServers, storeNewUsers } from '../db/queries';
 import { postMemeToTwitter } from './archiver/twitter'
 import { ArchiveContent } from './archiver/types';
@@ -26,7 +26,8 @@ const slashCommands = new Map<string, () => SlashCommand>([
 	[PollCommand.commandName, () => { return new PollCommand; }],
 	[YoutubeCommand.commandName, () => { return new YoutubeCommand; }],
 	[CoinFlipCommand.commandName, () => { return new CoinFlipCommand; }],
-	[StatsCommand.commandName, () => { return new StatsCommand; }]
+	[StatsCommand.commandName, () => { return new StatsCommand; }],
+	[AwardsCommand.commandName, () => { return new AwardsCommand; }]
 ]);
 
 const msgFunctions = [

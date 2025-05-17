@@ -42,6 +42,16 @@ export interface UpvotesGiven {
     upvotes_given: number
 }
 
+export interface DownvotesReceived {
+    user_id: string,
+    downvotes_received: number
+}
+
+export interface DownvotesGiven {
+    user_id: string,
+    downvotes_given: number
+}
+
 export interface MemeStats {
     user_id: string,
     posted: number,

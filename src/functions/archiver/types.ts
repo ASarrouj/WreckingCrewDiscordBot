@@ -1,7 +1,4 @@
 import { Attachment, Message, MessageCreateOptions } from 'discord.js';
-import { idRegex } from '../../helpers';
-import { join } from 'path'
-import * as fs from 'fs';
 
 const siteRegexes = [
 	/https:.*(fx)?twitter\.com\/.+\/status[^\s]+/,
@@ -23,8 +20,6 @@ const siteRegexes = [
 	/https:.*bsky\.app\/profile\/.+\/post\/[^\s]+/
 ];
 
-const tmpFolder = join(__dirname, '..', '..', '..', 'tmp')
-
 export interface MemeReactionInfo {
 	yesVoters: string[],
 	noVoters: string[],
@@ -35,8 +30,8 @@ export class ArchiveContent {
 	public url?: string;
 	public attachments: Attachment[]
 	public caption?: string;
-	public twitterCaption?: string; // Sanitizes Discord Server Names
 	public type: MemeType;
+	private downloadedAttachments?: ArrayBuffer[]
 
 	constructor(msg: Message) {
 		if (msg.attachments.size > 0) {
@@ -50,23 +45,21 @@ export class ArchiveContent {
 			this.type = MemeType.Link;
 			this.caption = msg.content.split(this.url)[0]?.trim() || undefined;
 		}
-		this.twitterCaption = this.caption?.replace(idRegex, (userId) => {
-			const idNum = /\d+/.exec(userId);
-			if (idNum !== null) {
-				return msg.guild?.members.cache.get(idNum[0])?.displayName || '';
-			}
-			return '';
-		});
+	}
+
+	public async loadAttachments() {
+		if (this.type === MemeType.Pic) {
+			this.downloadedAttachments = await Promise.all(this.attachments.map(async attachment => {
+				return (await fetch(new URL(attachment.url))).arrayBuffer()
+			}))
+		}
 	}
 
 	public async createMsg(): Promise<MessageCreateOptions> {
 		if (this.type == MemeType.Link) {
 			return { content: this.caption ? `${this.caption} ${this.url}` : this.url };
 		}
-		const files = await Promise.all(this.attachments.map(async attachment => {
-			return (await (await fetch(new URL(attachment.url))).blob()).arrayBuffer()
-		}))
-		return { content: this.caption, files: files.map(file => Buffer.from(file)) };
+		return { content: this.caption, files: this.downloadedAttachments?.map(file => Buffer.from(file)) };
 	}
 
 	public isMeme() {

@@ -2,8 +2,9 @@ import { adminId } from '../../helpers/constants';
 import { ArchiveContent, MemeReactionInfo } from './types';
 import { Guild, Message, EmbedBuilder, MessageReaction, TextChannel, User, Collection, ActionRowBuilder, ButtonBuilder, GuildBasedChannel, ButtonStyle, ComponentType, MessageActionRowComponentBuilder, MessageFlags } from 'discord.js';
 import moment from 'moment';
-import { postMemeToTwitter } from './twitter';
 import { getLastChannelMemeId, storeMeme } from '../../db/queries';
+import * as fs from 'fs';
+import path from 'path';
 
 const dayInMs = 86400000;
 
@@ -26,10 +27,10 @@ function calcFtbPoints(yesNum: number, noNum: number, memberCount: number) {
 	if (yesNum === memberCount - 1) {
 		return 10;
 	}
-	else if (yesNum + 1 >= memberCount / 2) {
+	else if (yesNum + 1 >= (memberCount / 2) - 1) {
 		return 5;
 	}
-	else if (noNum > memberCount / 2) {
+	else if (noNum > (memberCount / 2) - 1) {
 		return -5;
 	}
 	return 0;
@@ -50,8 +51,6 @@ async function postSuccessfulArchive(msg: Message, archiveContent: ArchiveConten
 	const responseMsg = await archiveContent.createMsg()
 	await archiveChannel.send(responseMsg);
 	await msg.reply({ embeds: [pollEmbed], allowedMentions: { repliedUser: false }, flags: MessageFlags.SuppressNotifications });
-	if (!cancelTwitPost && process.argv[2] === 'prod')
-		await postMemeToTwitter(archiveContent);
 }
 
 async function postRejectedArchive(msg: Message) {
@@ -176,6 +175,7 @@ export class Archiver {
 		const channel = msg.channel as TextChannel;
 		if (channel.topic?.includes('#archivable') && !(msg.content.includes(XEmoji.emoji) || msg.content.includes(XEmoji.text))) {
 			const archiveContent = new ArchiveContent(msg);
+			await archiveContent.loadAttachments();
 
 			if (archiveContent.isMeme()) {
 				await msg.react(thumbsUpEmoji.emoji);
@@ -229,6 +229,7 @@ export class Archiver {
 			!(deletedMsg.content.includes(XEmoji.emoji) || deletedMsg.content.includes(XEmoji.text)) &&
 			moment(deletedMsg.createdTimestamp, 'x').isSameOrAfter(moment().subtract(1, 'days')) &&
 			moment(deletedMsg.createdTimestamp, 'x').isSameOrBefore(moment().subtract(5, 'minutes'))) {
+			await archiveContent.loadAttachments()
 			const { yesVoters, noVoters, cancelTwitPost } = await getMemeInfo(deletedMsg);
 
 			const admin = await deletedMsg.guild?.members.fetch(adminId);
@@ -276,6 +277,7 @@ export class Archiver {
 		if (!archiveContent.isMeme() || msg.member?.user.bot || msg.content.includes(XEmoji.emoji) || msg.content.includes(XEmoji.text))
 			return;
 
+		await archiveContent.loadAttachments()
 		const { yesVoters, noVoters, cancelTwitPost } = await getMemeInfo(msg);
 
 		const msgMoment = moment(msg.createdTimestamp, 'x');
@@ -286,6 +288,7 @@ export class Archiver {
 			if (success) {
 				if (points > 0) {
 					const archiveContent = new ArchiveContent(msg);
+					await archiveContent.loadAttachments()
 					await postSuccessfulArchive(msg, archiveContent, archiveChannel as TextChannel, yesVoters.length, memberCount, cancelTwitPost);
 				}
 				else if (points < 0) {
@@ -297,4 +300,25 @@ export class Archiver {
 			await createArchiveVote(msg, memberCount, { yesVoters, noVoters, cancelTwitPost }, archiveContent, dayInMs - moment().diff(msgMoment));
 		}
 	}
+
+	static async fixMissedMemes(archiveChannel: GuildBasedChannel) {
+		const links = fs.readFileSync(path.resolve('links.txt'), 'utf8')
+		await links.split('\n').reverse().reduce(async (prev, link) => {
+			await prev;
+			await delay(3000)
+			const [urlStr, caption] = link.split('*');
+			const urls = urlStr.split(',')
+			const downloadedAttachments = await Promise.all(urls.map(async url => {
+				return (await fetch(new URL(url))).arrayBuffer()
+			}))
+			return (archiveChannel as TextChannel).send({
+				content: caption,
+				files: downloadedAttachments.map(file => Buffer.from(file))
+			})
+		}, Promise.resolve({}) as Promise<Message>)
+	}
+}
+
+ function delay(time: number) {
+      return new Promise(resolve => setTimeout(resolve, time));
 }

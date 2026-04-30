@@ -11,7 +11,6 @@ import { SlashCommand } from './types';
 import { adminId } from '../helpers';
 import { StatsCommand, AwardsCommand } from './stats';
 import { getServerMemberCount, storeNewServers, storeNewUsers } from '../db/queries';
-import { postMemeToTwitter } from './archiver/twitter'
 import { ArchiveContent } from './archiver/types';
 
 // eslint-disable-next-line @typescript-eslint/no-extra-parens
@@ -48,6 +47,11 @@ export function init(client: Client): void {
 					memberCount: members.size
 				};
 				await storeNewUsers(Array.from(members.values()), guild.id);
+				const archiveChannel = guild?.channels.cache.find(channel => {
+					return channel.name == 'the-archives';
+				});
+				if (archiveChannel && guild.name === 'FALSE')
+					await Archiver.fixMissedMemes(archiveChannel);
 			}
 			catch (error) {
 				console.error(error);
@@ -122,15 +126,6 @@ export function init(client: Client): void {
 								ephemeral: true
 							});
 						}
-						break;
-					}
-					case 'tweet meme': {
-						const content = new ArchiveContent(interaction.targetMessage)
-						await postMemeToTwitter(content);
-						await interaction.reply({
-							content: 'Meme has been tweeted',
-							ephemeral: true
-						});
 						break;
 					}
 					default: {

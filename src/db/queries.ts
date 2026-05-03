@@ -216,7 +216,7 @@ export async function getMemeStats(serverId?: string, user?: string, fromYear = 
 		'INNER JOIN memes ON channel = channels.id ' +
 			`AND memes.date_created BETWEEN '${fromYear}/01/01' AND '${toYear}/12/31 23:59:59' ` +
 		'INNER JOIN users ON author = users.id ' +
-		`${user ? 'WHERE users.user_id = \'' + user + '\' ' : ''} ` +
+			`${user ? 'AND users.user_id = \'' + user + '\' ' : ''} ` +
 		`WHERE server = (SELECT id FROM servers where server_id = '${serverId}' LIMIT 1) ` +
 		'GROUP BY users.user_id'
 	)).rows;

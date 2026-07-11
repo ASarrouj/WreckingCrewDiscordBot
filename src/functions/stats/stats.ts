@@ -1,15 +1,14 @@
 import {
-	CommandInteraction,
-	InteractionReplyOptions,
 	EmbedBuilder,
+	ChatInputCommandInteraction,
 } from 'discord.js';
 import { SlashCommand } from '../types';
 import { getMemeStats } from '../../db/queries';
 
-export class StatsCommand implements SlashCommand {
+export class StatsCommand extends SlashCommand {
 	static commandName = 'stats';
 	DM = false;
-	async respond(payload: CommandInteraction): Promise<InteractionReplyOptions> {
+	async respond(payload: ChatInputCommandInteraction) {
 		const user = payload.options.getUser('user');
 
 		const memeData = await getMemeStats(payload.guild?.id, user?.id);

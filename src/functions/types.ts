@@ -1,11 +1,9 @@
-import { CommandInteraction, Guild, InteractionReplyOptions, Message } from 'discord.js';
+import { BitFieldResolvable, ChatInputCommandInteraction, Guild, InteractionReplyOptions, Message } from 'discord.js';
 
-export class SlashCommand {
+export abstract class SlashCommand {
 	constructor() {}
 	DM?: boolean;
-	async respond(payload: CommandInteraction, guild: Guild): Promise<InteractionReplyOptions> {
-		return {};
-	}
+	abstract respond(payload: ChatInputCommandInteraction, guild: Guild): Promise<InteractionReplyOptions>;
 	async followup?(responseMsg: Message, memberCount: number): Promise<void>
 }
 
@@ -14,3 +12,4 @@ export class MsgCommand {
 		return;
 	}
 }
+	

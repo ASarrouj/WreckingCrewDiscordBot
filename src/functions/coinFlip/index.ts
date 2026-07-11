@@ -1,11 +1,10 @@
-import { InteractionReplyOptions } from 'discord.js';
 import { SlashCommand } from '../types';
 
 
-export class CoinFlipCommand implements SlashCommand {
+export class CoinFlipCommand extends SlashCommand {
 	static commandName = 'coinflip';
 	DM = true;
-	async respond(): Promise<InteractionReplyOptions> {
+	async respond() {
 		const rand = Math.random();
 
 		if (rand < 0.5) {

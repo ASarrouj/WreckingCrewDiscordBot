@@ -1,14 +1,14 @@
-import { ChatInputCommandInteraction, InteractionReplyOptions } from 'discord.js';
+import { ChatInputCommandInteraction } from 'discord.js';
 import { google } from 'googleapis';
 import { googleApiCreds } from '../../secureConstants.ign';
 import { SlashCommand } from '../types';
 const youtube = google.youtube('v3');
 let engineIndex = 0;
 
-export class YoutubeCommand implements SlashCommand {
+export class YoutubeCommand extends SlashCommand {
 	static commandName = 'youtube';
 	DM = true;
-	async respond(payload: ChatInputCommandInteraction): Promise<InteractionReplyOptions> {
+	async respond(payload: ChatInputCommandInteraction) {
 		const query = payload.options.getString('query')!;
 
 		const searchResponse = await youtube.search.list({

@@ -91,7 +91,6 @@ export async function storeDownvotes(userIds: string[], meme: number, client?: P
 	const valQueries = userIds.map(id => {
 		return `(${meme}, ${getUserIdSubQ(id)})`;
 	}).join(', ');
-	console.log(valQueries);
 
 	await client.query(
 		'INSERT INTO downvotes (meme, "user") ' +
@@ -131,7 +130,7 @@ export async function storeNewUsers(members: GuildMember[], serverId: string) {
 export async function storeNewServers(guilds: Collection<string, Guild>) {
 	const userVals = guilds.map(guild => `('${guild.id}', '${guild.name}')`).join(', ');
 
-	await pool.query(
+	pool.query(
 		'WITH ins AS(' +
 			'INSERT INTO servers (server_id, name) ' +
 			`VALUES ${userVals} ` +
@@ -232,10 +231,24 @@ export async function getLastChannelMemeId(channelId: string) {
 
 export async function getServerMemberCount(serverId?: string) {
 	return (await pool.query<{count: number}>(
-		'SELECT COUNT(*) AS count FROM servers ' +
-		'INNER JOIN users_servers ON server.id = servers.id ' +
-		'INNER JOIN users ON users.id = users_servers.user ' +
-		`${serverId ? `WHERE servers.server_id = '${serverId}'` : ''} ` +
-		'GROUP BY servers.server_id'
+		`SELECT COUNT(*) AS count FROM servers s
+		INNER JOIN users_servers us ON s.id = us.server
+		INNER JOIN users u ON u.id = us.user
+		${serverId ? `WHERE s.server_id = '${serverId}'` : ''}
+		GROUP BY s.server_id`
 	)).rows;
+}
+
+export async function recordWordleResults(values: WordleResultValues[]) {
+	const valueString = values.map(value => `('${value.userId}', '${value.date}', '${value.tries}', ${value.win}, ${value.wordleNumber})`).join(',')
+	pool.query(`INSERT INTO wordle_results (user, date, tries, win, number)
+					VALUES ${valueString}`)
+}
+
+export interface WordleResultValues {
+	userId: string
+	date: string
+	tries: string
+	win: boolean
+	wordleNumber: string
 }

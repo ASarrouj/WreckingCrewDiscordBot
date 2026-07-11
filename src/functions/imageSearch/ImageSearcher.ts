@@ -1,5 +1,4 @@
-import { customsearch_v1, google } from 'googleapis';
-import { GaxiosPromise } from 'googleapis/build/src/apis/abusiveexperiencereport';
+import { google, customsearch_v1 } from 'googleapis';
 const cse = google.customsearch('v1').cse;
 
 export class ImageSearcher {
@@ -10,7 +9,7 @@ export class ImageSearcher {
 		this.apiKey = apiKey;
 	}
 
-	async search(queryOptions: customsearch_v1.Params$Resource$Cse$List) : GaxiosPromise<customsearch_v1.Schema$Search> {
+	async search(queryOptions: customsearch_v1.Params$Resource$Cse$List) {
 		queryOptions.key = this.apiKey;
 		queryOptions.cx = this.cseId;
 		return cse.list(queryOptions);

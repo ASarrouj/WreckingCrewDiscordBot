@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, EmbedBuilder, InteractionReplyOptions } from "discord.js";
+import { ChatInputCommandInteraction, EmbedBuilder, InteractionReplyOptions, MessageFlags } from "discord.js";
 import { SlashCommand } from "../types";
 import { getMemeStats, getTopDownvotesReceived, getTopUpvotesGiven, getTopUpvotesReceived } from "../../db/queries";
 
@@ -17,14 +17,14 @@ const thirdPlaceEmoji = {
 	text: 'third_place'
 }
 
-export class AwardsCommand implements SlashCommand {
+export class AwardsCommand extends SlashCommand {
 	static commandName = 'awards';
 	DM = false;
 	async respond(payload: ChatInputCommandInteraction): Promise<InteractionReplyOptions> {
 		const year = payload.options.getInteger('year');
 		if (!year || year < 2022 || year > 2100) {
 			return {
-				ephemeral: true,
+				flags:[MessageFlags.Ephemeral],
 				content: 'Meme data only goes back to 2022 and a reasonable future year'
 			}
 		}
@@ -32,7 +32,7 @@ export class AwardsCommand implements SlashCommand {
 		const memeData = await getMemeStats(payload.guild?.id, undefined, year!, year!);
 		if (memeData.length === 0) {
 			return {
-				ephemeral: true,
+				flags:[MessageFlags.Ephemeral],
 				content: 'No meme data available for this year'
 			}
 		}

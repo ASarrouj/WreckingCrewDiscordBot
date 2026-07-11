@@ -11,7 +11,8 @@ import {
 	ActionRow,
 	MessageActionRowComponent,
 	ButtonComponent,
-	APIEmbed
+	APIEmbed,
+	MessageFlags
 } from 'discord.js';
 import { SlashCommand } from '../types';
 
@@ -60,7 +61,7 @@ export class PollCommand implements SlashCommand {
 	private pollHours = 1;
 	private pollVotes: { [key: string]: string[] } = {};
 	private choices: string[] = ["Option1", "Option2"];
-	async respond(payload: ChatInputCommandInteraction, guild: Guild): Promise<InteractionReplyOptions> {
+	async respond(payload: ChatInputCommandInteraction, guild: Guild) {
 		let question = payload.options.getString('question', true);
 		this.choices = payload.options.data.filter(option => {
 			return option.name.includes('choice');
@@ -163,7 +164,7 @@ export class PollCommand implements SlashCommand {
 			}
 			await interaction.reply({
 				content: 'You must be the author of this poll to cancel it',
-				ephemeral: true,
+				flags:[MessageFlags.Ephemeral],
 			});
 		});
 

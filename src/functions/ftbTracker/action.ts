@@ -2,7 +2,6 @@ import {
 	ChatInputCommandInteraction,
 	Guild,
 	GuildMember,
-	InteractionReplyOptions,
 	Message,
 	ActionRowBuilder,
 	ButtonBuilder,
@@ -10,11 +9,13 @@ import {
 	ButtonStyle,
 	MessageActionRowComponentBuilder,
 	ComponentType,
+	MessageFlags,
+	InteractionReplyOptions,
 } from 'discord.js';
 import { getFtbSums, storeFtbTransaction } from '../../db/queries';
 import { SlashCommand } from '../types';
 
-export class FtbShowAndEditCommand implements SlashCommand {
+export class FtbShowAndEditCommand extends SlashCommand {
 	static commandName = 'ftb';
 	pointAmt = 0;
 	author?: GuildMember;
@@ -57,20 +58,20 @@ export class FtbShowAndEditCommand implements SlashCommand {
 		if (this.recipient.id === this.author.id) {
 			return {
 				content: 'You cannot change your own FTB score.',
-				ephemeral: true
+				flags: [MessageFlags.Ephemeral],
 			};
 		}
 
 		if (this.pointAmt < -20 || this.pointAmt > 20) {
 			return {
 				content: 'Point values must be between -20 and +20.',
-				ephemeral: true
+				flags: [MessageFlags.Ephemeral],
 			};
 		}
 		if (this.pointAmt === 0) {
 			return {
 				content: 'Point value cannot be 0.',
-				ephemeral: true
+				flags: [MessageFlags.Ephemeral],
 			};
 		}
 
@@ -104,7 +105,7 @@ export class FtbShowAndEditCommand implements SlashCommand {
 			if (blocked.includes(interaction.user.id)) {
 				await interaction.reply({
 					content: 'A third party must approve this transaction',
-					ephemeral: true,
+					flags: [MessageFlags.Ephemeral],
 				});
 				return;
 			}

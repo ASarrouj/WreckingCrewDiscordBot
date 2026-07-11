@@ -5,11 +5,11 @@ import { ChatInputCommandInteraction, InteractionReplyOptions } from 'discord.js
 const engines = googleApiCreds.map((key) => { return new ImageSearcher(key.cx, key.apiKey); });
 let engineIndex = 0;
 
-export class ImageSearchCommand implements SlashCommand {
+export class ImageSearchCommand extends SlashCommand {
 	static commandName = 'showme';
 	DM = true;
-	async respond(payload: ChatInputCommandInteraction): Promise<InteractionReplyOptions> {
-		let interactionResponse: InteractionReplyOptions;
+	async respond(payload: ChatInputCommandInteraction) {
+		let interactionResponse;
 		const origQuery = payload.options.getString('query', true);
 		const gifOnly = payload.options.getBoolean('gif');
 		const query = gifOnly ? `${origQuery} gif` : origQuery;

@@ -1,10 +1,10 @@
-import { ChatInputCommandInteraction, Guild, InteractionReplyOptions } from 'discord.js';
+import { ChatInputCommandInteraction, Guild } from 'discord.js';
 import { SlashCommand } from '../types';
 import { resetFtbPoints } from '../../db/queries';
 
-export class FtbResetCommand implements SlashCommand {
+export class FtbResetCommand extends SlashCommand {
 	static commandName = 'ftbreset';
-	async respond(payload: ChatInputCommandInteraction, guild: Guild): Promise<InteractionReplyOptions> {
+	async respond(payload: ChatInputCommandInteraction, guild: Guild) {
 		const user = guild.members.cache.get(payload.options.getUser('user', true).id)!;
 		const pointAmt = payload.options.getInteger('points', true);
 		const feedbackMessage = await resetFtbPoints(user, pointAmt);

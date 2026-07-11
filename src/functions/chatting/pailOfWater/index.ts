@@ -1,11 +1,9 @@
-import { InteractionReplyOptions } from 'discord.js';
 import { SlashCommand } from '../../types';
 
-export class PailOfWaterCommand implements SlashCommand {
+export class PailOfWaterCommand extends SlashCommand {
 	static commandName = 'pailofwater';
-	constructor() {	}
 
-	async respond() : Promise<InteractionReplyOptions> {
+	async respond() {
 		return {
 			content: 'HUHUHUHUHU JOE YOU\'RE KILLING ME MAN <:boxofsand:672942967966662689>',
 		};

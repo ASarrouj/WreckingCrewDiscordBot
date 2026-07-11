@@ -1,4 +1,3 @@
-import { InteractionReplyOptions } from 'discord.js';
 import { SlashCommand } from '../../types';
 
 export class GoodBotCommand implements SlashCommand {
@@ -6,7 +5,7 @@ export class GoodBotCommand implements SlashCommand {
 	DM = true;
 	constructor() {	}
 
-	async respond() : Promise<InteractionReplyOptions> {
+	async respond() {
 		return {
 			content: 'https://imgur.com/HaiJq9f',
 		};
